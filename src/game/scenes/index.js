@@ -1,0 +1,1 @@
+export { DefaultScene } from './DefaultScene';

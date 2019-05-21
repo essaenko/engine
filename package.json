@@ -1,0 +1,26 @@
+{
+  "name": "engine",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "build": "npx webpack --config webpack.conf.js",
+    "watch": "npx webpack --watch --config webpack.conf.js",
+    "start": "webpack-dev-server --config webpack.conf.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.4.4",
+    "@babel/plugin-transform-runtime": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "babel-loader": "^8.0.5",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.4.1"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.4.4"
+  }
+}
