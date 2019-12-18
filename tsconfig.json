@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es2015",
+      "es2017",
+      "es2016",
+      "es5",
+      "es6",
+      "dom"
+    ],
+    "target": "es5",
+    "baseUrl": ".",
+    "paths": {
+      "core/*": ["src/core/*"],
+      "game/*": ["src/game/*"]
+    }
+  }
+}

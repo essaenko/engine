@@ -2,42 +2,61 @@ import {Core} from 'core/core';
 import {KeyBoard} from 'core/input';
 
 export class Entity {
+  public state;
+  public input;
+  public collisions;
+  public posX;
+  public posY;
+  public update;
+
   constructor(initialState) {
-    this.state = { ...{
+    this.state = {
+      ...{
         speed: 1,
         physics: {
           gravityY: 0,
           gravityX: 0,
-        }
-      }, ...initialState };
+        },
+        animation: 'down',
+        scaleHeight: 0,
+        scaleWidth: 0,
+      }, ...initialState
+    };
     
     this.input = new KeyBoard();
     this.collisions = [];
-    Core.eventBus.subscribe('game:start', this.startListenLoop);
   }
   
-  startListenLoop = () => {
+  setState = (state) => this.state = { ...this.state, ...state };
+  
+  public init = () => {
     Core.eventBus.subscribe('loop:tick', this.updateProxy);
   };
   
-  updateProxy = (event) => {
-    const { physics } = this.state;
-    this.posY = physics.gravityY;
-    this.posX = -physics.gravityX;
+  destroy = () => {
+    Core.eventBus.unsubscribe('loop:tick', this.updateProxy);
+  };
+  
+  public updateProxy = (event) => {
+    const { physics: { gravityY, gravityX } } = this.state;
+    this.posY = gravityY;
+    this.posX = -gravityX;
     
     this.input.update(event);
-    this.update(event);
+    if (this.update) {
+      this.update(event);
+    }
     this.checkCollisions();
     this.applyChanges();
   };
   
   checkCollisions = () => {
-    const { posX, posY, width, height } = this.state;
-
+    const {posX, posY, width, height} = this.state;
+    
     this.collisions.forEach(entity => {
-      const { posX: ePosX, posY: ePosY, width: eWidth, height: eHeight } = entity.state;
+      const {posX: ePosX, posY: ePosY, width: eWidth, height: eHeight} = entity.state;
       const [nextX, nextY] = [(posX + this.posX), (posY + this.posY)];
-  
+      
       if (
         (nextX < ePosX + eWidth) &&
         (nextX + width > ePosX) &&
@@ -76,33 +95,54 @@ export class Entity {
       width,
       height,
     } = this.state;
-    if (posY < 0 ) {
+    if (posY < 0) {
       this.state.posY = 0;
-    } else if (posY + height> context.canvas.height) {
+    } else if (posY + height > context.canvas.height) {
       this.state.posY = context.canvas.height - height;
     }
-  
+    
     if (posX < 0) {
       this.state.posX = 0;
-    } else if (posX + width  > context.canvas.width) {
+    } else if (posX + width > context.canvas.width) {
       this.state.posX = context.canvas.width - width;
     }
   };
   
   render = (context) => {
-    let { state: {
+    let {
       posX,
       posY,
       width,
       height,
       fill,
-    } } = this;
-    this.setEntityInToLayer(context);
-
-    if (this.state.sprite) {
+      preventLoss,
+      sprite,
+      textContent,
+      drawShape,
+    } = this.state;
     
+    if (preventLoss) {
+      this.setEntityInToLayer(context);
+    }
+    
+    if (sprite) {
+      sprite.render(context, this.state);
+    } else if (textContent) {
+      textContent.forEach((textItem) => {
+        const { content, x, y, font, color, id, width, height } = textItem;
+        context.fillStyle = color;
+        context.font = font;
+        context.beginPath();
+        context.rect(x,y, width, height);
+        context.fillText(content, x, y + height);
+        context.addHitRegion({id});
+      });
     } else {
       context.fillStyle = fill;
+      context.fillRect(posX, posY, width, height);
+    }
+    if (drawShape) {
+      context.fillStyle = 'red';
       context.fillRect(posX, posY, width, height);
     }
   }

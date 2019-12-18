@@ -1,6 +1,7 @@
-import { Core } from 'core/core';
+export class Loop implements ILoop {
+  public eventBus;
+  public intervalId;
 
-export class Loop {
   constructor(eventBus) {
     this.eventBus = eventBus;
     this.initListeners();
@@ -8,7 +9,7 @@ export class Loop {
 
   pressed = [];
 
-  initListeners = () => {
+  private initListeners = () => {
     document.addEventListener('keydown', ({keyCode}) => {
       if (!this.pressed.includes(keyCode)) {
         this.pressed.push(keyCode);
@@ -20,13 +21,14 @@ export class Loop {
     this.eventBus.subscribe('game:start', this.initLoop);
   };
 
-  initLoop = () => {
-    this.intervalId = setInterval(this.tick, 1000 / 60);
+  private initLoop = () => {
+    window.requestAnimationFrame(this.tick);
   };
 
-  tick = () => {
+  private tick = () => {
     this.eventBus.dispatch('loop:tick', {
       pressed: this.pressed,
     });
+    window.requestAnimationFrame(this.tick);
   }
 }

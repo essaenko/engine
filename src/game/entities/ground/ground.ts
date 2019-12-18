@@ -1,4 +1,4 @@
-import { Entity } from 'core';
+import { Entity } from 'core/entity';
 
 export class Ground extends Entity {
   constructor(config) {
