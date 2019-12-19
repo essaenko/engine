@@ -1,14 +1,22 @@
 import { Scene } from 'core/scene';
 import { AnimationGroup, Animation } from 'core/assets/animation';
+import { Camera } from 'core/camera';
 
 import {Ground, Player, Fps} from 'game/entities';
 // @ts-ignore
 import knightSprite from 'game/assets/knight.png';
 // @ts-ignore
-import athlas from 'game/assets/athlas.png';
+import atlas from 'game/assets/atlas.png';
+import * as tilemap from 'game/levels/gameScene.json';
+import * as tileset from 'game/assets/atlas.json';
 
 export const GameScene = new Scene({
   fill: '#000',
+  map: {
+    tileset,
+    tilemap,
+    atlas: 'atlas',
+  },
   preload: (scene) => {
     scene.assets.addSprite('grunt', {
       width: 75,
@@ -17,8 +25,8 @@ export const GameScene = new Scene({
       col: 4,
       row: 12,
     });
-    scene.assets.addTileMap('athlas', {
-      url: athlas,
+    scene.assets.addTileMap('atlas', {
+      url: atlas,
     });
   },
   create: (scene) => {
@@ -28,7 +36,7 @@ export const GameScene = new Scene({
         height: 20,
         y: 10,
         x: 10,
-        color: '#fff',
+        color: '#000',
         font: '20px Arial',
         id: 'fps_meter',
         content: 0,
@@ -54,18 +62,11 @@ export const GameScene = new Scene({
     });
     const playerSprite = scene.assets.getSprite('grunt');
     playerSprite.useAnimation(playerAnimation);
-    const platform = new Ground({
-      width: 100,
-      height: 20,
-      posX: 50,
-      posY: 100,
-      fill: 'white',
-    });
     const player = new Player({
       width: 32,
       height: 20,
-      posX: 10,
-      posY: 30,
+      posX: 70,
+      posY: 90,
       fill: 'white',
       preventLoss: true,
       physics: {
@@ -75,12 +76,15 @@ export const GameScene = new Scene({
       sprite: playerSprite,
       scaleHeight: 30,
     });
-    player.setCollision(platform);
     
     scene.useEntities([
-      platform,
       player,
       fpsMeter,
-    ])
+    ]);
+    scene.useCamera(new Camera({
+      follow: player,
+      width: 400,
+      height: 400,
+    }))
   }
 });

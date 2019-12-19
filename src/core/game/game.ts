@@ -50,16 +50,18 @@ export class Game implements IGame {
   };
   
   public useScene = (scene: IScene): void => {
+    Core.eventBus.unsubscribe('loop:tick', this.render);
     if (this.state.scene) {
       this.state.scene.destroy();
     }
     this.setState({ scene });
-    this.applyScene();
+    this.applyScene().then(() => {
+      Core.eventBus.subscribe('loop:tick', this.render);
+    });
   };
   
   private applyScene = async (): Promise<void> => {
     await this.state.scene.usedByGame(this);
-    this.state.scene.render(this.state.layerContext);
   };
   
   private useLayer = (): void => {

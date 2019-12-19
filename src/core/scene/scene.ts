@@ -1,7 +1,16 @@
 import { AssetManager } from 'core/asset-manager';
+import {ICamera} from 'core/camera/camera';
 
 export interface ISceneInitialState {
-
+  fill?: string;
+  preload?: (IScene) => void;
+  create?: (IScene) => void;
+  update?: (IScene) => void;
+  map?: {
+    tileset: any,
+    tilemap: any,
+    atlas: string,
+  }
 }
 
 export class Scene implements IScene {
@@ -22,35 +31,107 @@ export class Scene implements IScene {
     }
   };
   
-  private renderTailMap = () => {
-  
+  private renderMap = (context: CanvasRenderingContext2D, xOffset: number = 0, yOffset: number = 0, width: number = 0, height: number = 0) => {
+    const { map: { tileset, tilemap, atlas } } = this.state;
+    const { image } = this.assets.getTilemap(atlas);
+    const { layers, tileheight, tilewidth } = tilemap;
+    const { columns } = tileset;
+
+    layers.forEach((layer) => {
+      const { data: tiles } = layer;
+
+      for(let col = 0; col < layer.width; col++) {
+        for(let row = 0; row < layer.height; row ++) {
+          const tile = tiles[row * layer.width + col];
+          context.drawImage(
+            image,
+            tilewidth * (tile - 1 - Math.floor(tile/columns) * 32),
+            tileheight * Math.floor(tile/columns),
+            tilewidth,
+            tileheight,
+            col * tilewidth + xOffset,
+            row * tileheight + yOffset,
+            tilewidth,
+            tileheight,
+          );
+        }
+      }
+    });
   };
 
   public render = (context) => {
-    const { width, height, map } = this.state;
+    const { width, height, map, camera } = this.state;
 
     if (!this.game.state.layer) {
-      return void console.warn(`Can't render scene in game. Layer not defined. Use useLayer of Game class to define it.`);
+      return void console.warn(`Can't render scene in game. Layer not defined. Use useLayer method of Game class to define it.`);
     }
-    if (map) {
-      this.renderTailMap();
+    if (camera) {
+      this.game.state.layer.height = camera.state.height;
+      this.game.state.layer.width = camera.state.width;
+      this.renderCamera(context);
+    } else if (map) {
+      this.renderMap(context);
     } else {
       context.fillStyle = this.state.fill;
       context.fillRect(0,0, width, height);
     }
-
     this.renderEntities(context);
   };
   
-  renderEntities = (context) => {
+  private renderCamera = (context) => {
+    const { camera } = this.state;
+    this.renderMap(context, -camera.state.x, -camera.state.y);
+  };
+  
+  private renderEntities = (context) => {
+    const { camera } = this.state;
     if (this.entities) {
       this.entities.forEach(entity => {
-        entity.render(context);
+        let {
+          posX,
+          posY,
+          width,
+          height,
+          fill,
+          preventLoss,
+          sprite,
+          textContent,
+          drawShape,
+        } = entity.state;
+  
+        // if (preventLoss) {
+        //   this.setEntityInToLayer(context);
+        // }
+  
+        if (sprite) {
+          sprite.render(context, {
+            ...entity.state,
+            posX: entity.state.posX - camera.state.x,
+            posY: entity.state.posY - camera.state.y,
+          });
+        } else if (textContent) {
+          textContent.forEach((textItem) => {
+            const { content, x, y, font, color, id, width, height } = textItem;
+            context.fillStyle = color;
+            context.font = font;
+            context.beginPath();
+            context.rect(x,y, width, height);
+            context.fillText(content, x, y + height);
+            context.addHitRegion({id});
+          });
+        } else {
+          context.fillStyle = fill;
+          context.fillRect(posX, posY, width, height);
+        }
+        if (drawShape) {
+          context.fillStyle = 'red';
+          context.fillRect(posX, posY, width, height);
+        }
       });
     }
   };
   
-  usedByGame = async (game) => {
+  public usedByGame = async (game) => {
     const { state: { width, height } } = game;
     this.game = game;
     this.setState({
@@ -66,9 +147,15 @@ export class Scene implements IScene {
     }
   };
   
-  useEntities = (entities) => {
+  public useEntities = (entities) => {
     this.entities = entities;
     this.entities.forEach((entity) => entity.init());
+  };
+  
+  public useCamera = (camera: ICamera) => {
+    const { height, tileheight, width, tilewidth } = this.state.map.tilemap;
+    this.setState({ camera });
+    camera.setState({ maxX: width * tilewidth - camera.state.width , maxY: height * tileheight - camera.state.height });
   };
   
   public destroy = () => {

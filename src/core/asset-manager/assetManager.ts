@@ -36,7 +36,7 @@ export class AssetManager implements IAssetsManager {
   public addSprite = (key, config) => this.assets.sprites.queue[key] = config;
   
   public getTilemap = (key) => this.getAsset('tilemaps', key);
-  public setTilemap = (key, map) => this.setAsset('sprites', key, map);
+  public setTilemap = (key, map) => this.setAsset('tilemaps', key, map);
   
   public addTileMap = (key, config) => this.assets.tilemaps.queue[key] = config;
   

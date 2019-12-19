@@ -926,7 +926,7 @@
   "tilesets": [
     {
       "firstgid": 1,
-      "source": "athlas.json"
+      "source": "../assets/atlas.json"
     }
   ],
   "tilewidth": 32,

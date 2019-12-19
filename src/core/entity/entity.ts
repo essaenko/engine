@@ -1,7 +1,19 @@
 import {Core} from 'core/core';
 import {KeyBoard} from 'core/input';
 
-export class Entity {
+export interface IEntity {
+  state: {
+    posX: number;
+    posY: number;
+  };
+  input: any;
+  collisions: IEntity[];
+  posX: number;
+  posY: number;
+  update: (event: any) => void;
+}
+
+export class Entity implements IEntity {
   public state;
   public input;
   public collisions;
@@ -107,43 +119,4 @@ export class Entity {
       this.state.posX = context.canvas.width - width;
     }
   };
-  
-  render = (context) => {
-    let {
-      posX,
-      posY,
-      width,
-      height,
-      fill,
-      preventLoss,
-      sprite,
-      textContent,
-      drawShape,
-    } = this.state;
-    
-    if (preventLoss) {
-      this.setEntityInToLayer(context);
-    }
-    
-    if (sprite) {
-      sprite.render(context, this.state);
-    } else if (textContent) {
-      textContent.forEach((textItem) => {
-        const { content, x, y, font, color, id, width, height } = textItem;
-        context.fillStyle = color;
-        context.font = font;
-        context.beginPath();
-        context.rect(x,y, width, height);
-        context.fillText(content, x, y + height);
-        context.addHitRegion({id});
-      });
-    } else {
-      context.fillStyle = fill;
-      context.fillRect(posX, posY, width, height);
-    }
-    if (drawShape) {
-      context.fillStyle = 'red';
-      context.fillRect(posX, posY, width, height);
-    }
-  }
 }

@@ -8,6 +8,7 @@
       "es6",
       "dom"
     ],
+    "resolveJsonModule": true,
     "target": "es5",
     "baseUrl": ".",
     "paths": {
