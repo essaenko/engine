@@ -5,6 +5,9 @@ export interface IEntity {
   state: {
     posX: number;
     posY: number;
+    scene: IScene;
+    width: number;
+    height: number;
   };
   input: any;
   collisions: IEntity[];
@@ -41,7 +44,8 @@ export class Entity implements IEntity {
   
   setState = (state) => this.state = { ...this.state, ...state };
   
-  public init = () => {
+  public init = (scene: IScene) => {
+    this.setState({ scene });
     Core.eventBus.subscribe('loop:tick', this.updateProxy);
   };
   
@@ -64,7 +68,6 @@ export class Entity implements IEntity {
   
   checkCollisions = () => {
     const {posX, posY, width, height} = this.state;
-    
     this.collisions.forEach(entity => {
       const {posX: ePosX, posY: ePosY, width: eWidth, height: eHeight} = entity.state;
       const [nextX, nextY] = [(posX + this.posX), (posY + this.posY)];
@@ -89,6 +92,9 @@ export class Entity implements IEntity {
         }
       }
     });
+    if (this.posX || this.posY) {
+      this.state.scene.checkCollisions(this);
+    }
   };
   
   setCollision = (object) => {

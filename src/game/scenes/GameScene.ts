@@ -30,6 +30,9 @@ export const GameScene = new Scene({
     });
   },
   create: (scene) => {
+    const { map: { tilemap, tileset } } = scene.state;
+    const mapWidth = tilemap.width * tilemap.tilewidth;
+    const mapHeight = tilemap.height * tilemap.tileheight;
     const fpsMeter = new Fps({
       textContent: [{
         width: 20,
@@ -83,8 +86,8 @@ export const GameScene = new Scene({
     ]);
     scene.useCamera(new Camera({
       follow: player,
-      width: 400,
-      height: 400,
+      width: window.innerWidth > mapWidth ? mapWidth : window.innerWidth,
+      height: window.innerHeight > mapHeight ? mapHeight : window.innerHeight,
     }))
   }
 });

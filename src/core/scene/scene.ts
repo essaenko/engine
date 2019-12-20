@@ -1,5 +1,6 @@
 import { AssetManager } from 'core/asset-manager';
 import {ICamera} from 'core/camera/camera';
+import {IEntity} from 'core/entity/entity';
 
 export interface ISceneInitialState {
   fill?: string;
@@ -29,6 +30,25 @@ export class Scene implements IScene {
       ...this.state,
       ...state,
     }
+  };
+  
+  public checkCollisions = (entity: IEntity) => {
+    const { tilemap: { height: tmHeight, width: tmWidth, tileheight: theight, tilewidth: tWidth, layers }, tileset } = this.state.map;
+    const { posX, posY, state } = entity;
+    const [nextX, nextY] = [
+      (state.posX + posX + (posX > 0 ? state.width : 0)),
+      (state.posY + posY + (posY > 0 ? state.height : 0))
+    ];
+    layers.forEach(({ data }) => {
+      const tileID = data[Math.floor(nextY / theight) * tmHeight + Math.floor(nextX/tWidth)] - 1;
+      const tile = tileset.tiles.filter((tile) => tile.id === tileID)[0];
+  
+      if (tile && tile.properties.some(({ name, value }) => (name === 'collision' && value))) {
+        entity.posX = 0;
+        entity.posY = 0;
+        return;
+      }
+    });
   };
   
   private renderMap = (context: CanvasRenderingContext2D, xOffset: number = 0, yOffset: number = 0, width: number = 0, height: number = 0) => {
@@ -149,7 +169,7 @@ export class Scene implements IScene {
   
   public useEntities = (entities) => {
     this.entities = entities;
-    this.entities.forEach((entity) => entity.init());
+    this.entities.forEach((entity) => entity.init(this));
   };
   
   public useCamera = (camera: ICamera) => {
