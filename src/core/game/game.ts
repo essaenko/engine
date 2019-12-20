@@ -80,9 +80,7 @@ export class Game implements IGame {
         layerContext: layer.getContext('2d'),
       });
       layer.addEventListener('click', (event: MouseUIEvent): void =>  {
-        if (event.region) {
-          Core.eventBus.dispatch(`clickRegion${event.region}`)
-        }
+        Core.eventBus.dispatch(`canvasClick`, event);
       });
     }
   };

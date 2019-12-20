@@ -1,6 +1,7 @@
 import { AssetManager } from 'core/asset-manager';
 import {ICamera} from 'core/camera/camera';
 import {IEntity} from 'core/entity/entity';
+import { Core } from 'core/core';
 
 export interface ISceneInitialState {
   fill?: string;
@@ -33,13 +34,18 @@ export class Scene implements IScene {
   };
   
   public checkCollisions = (entity: IEntity) => {
-    const { tilemap: { height: tmHeight, width: tmWidth, tileheight: theight, tilewidth: tWidth, layers }, tileset } = this.state.map;
+    const { tilemap: { height: tmHeight, tileheight: theight, tilewidth: tWidth, layers }, tileset } = this.state.map;
+
+    if (!tileset.tiles) return;
+
     const { posX, posY, state } = entity;
     const [nextX, nextY] = [
       (state.posX + posX + (posX > 0 ? state.width : 0)),
       (state.posY + posY + (posY > 0 ? state.height : 0))
     ];
-    layers.forEach(({ data }) => {
+    layers.forEach(({ data, visible }) => {
+      if (!visible) return;
+      
       const tileID = data[Math.floor(nextY / theight) * tmHeight + Math.floor(nextX/tWidth)] - 1;
       const tile = tileset.tiles.filter((tile) => tile.id === tileID)[0];
   
@@ -55,22 +61,26 @@ export class Scene implements IScene {
     const { map: { tileset, tilemap, atlas } } = this.state;
     const { image } = this.assets.getTilemap(atlas);
     const { layers, tileheight, tilewidth } = tilemap;
-    const { columns } = tileset;
+    const { columns, spacing = 0 } = tileset;
 
     layers.forEach((layer) => {
       const { data: tiles } = layer;
 
+      if (!layer.visible) return;
+
       for(let col = 0; col < layer.width; col++) {
         for(let row = 0; row < layer.height; row ++) {
-          const tile = tiles[row * layer.width + col];
+          const tile = tiles[row * layer.width + col] - 1;
+          
+          if (tile <= 0) continue;
           context.drawImage(
             image,
-            tilewidth * (tile - 1 - Math.floor(tile/columns) * 32),
-            tileheight * Math.floor(tile/columns),
+            tilewidth * (tile - Math.floor(tile/columns) * columns) + (spacing * (tile - Math.floor(tile/columns) * columns)),
+            tileheight * Math.floor(tile/columns) + spacing * Math.floor(tile/columns),
             tilewidth,
             tileheight,
-            col * tilewidth + xOffset,
-            row * tileheight + yOffset,
+            col * tilewidth + Math.floor(xOffset),
+            row * tileheight + Math.floor(yOffset),
             tilewidth,
             tileheight,
           );
@@ -113,15 +123,10 @@ export class Scene implements IScene {
           width,
           height,
           fill,
-          preventLoss,
           sprite,
           textContent,
           drawShape,
         } = entity.state;
-  
-        // if (preventLoss) {
-        //   this.setEntityInToLayer(context);
-        // }
   
         if (sprite) {
           sprite.render(context, {
@@ -137,7 +142,9 @@ export class Scene implements IScene {
             context.beginPath();
             context.rect(x,y, width, height);
             context.fillText(content, x, y + height);
-            context.addHitRegion({id});
+            if (context.addHitRegion) {
+              context.addHitRegion({id});
+            }
           });
         } else {
           context.fillStyle = fill;
@@ -169,7 +176,23 @@ export class Scene implements IScene {
   
   public useEntities = (entities) => {
     this.entities = entities;
-    this.entities.forEach((entity) => entity.init(this));
+    this.entities.forEach(({ state: { textContent }, init }) => {
+      if (textContent) {
+        textContent.forEach((textitem) => {
+          Core.eventBus.subscribe('canvasClick', ({ clientX, clientY, region }: MouseUIEvent) => {
+            if (
+              region === `clickRegion${textitem.id}` ||
+              (clientX >= textitem.x &&
+                clientX <= textitem.x + textitem.width &&
+                clientY >= textitem.y && clientY <= textitem.y + textitem.height)
+            ) {
+              Core.eventBus.dispatch(`clickRegion${textitem.id}`);
+            }
+          });
+        })
+      }
+      init(this);
+    });
   };
   
   public useCamera = (camera: ICamera) => {

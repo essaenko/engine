@@ -7,7 +7,7 @@ export class SpriteSheet implements ISpriteSheet {
   }
   
   xCoord = (frameNumber: number) => {
-    const frameColumn = frameNumber % this.state.col;
+    const frameColumn = frameNumber % this.state.row;
     const isFrameWithBorder = frameColumn === 0;
     
     return (isFrameWithBorder && (this.state.xBorder || 0)) +
@@ -16,7 +16,7 @@ export class SpriteSheet implements ISpriteSheet {
   };
   
   yCoord = (frameNumber) => {
-    const frameRow = Math.floor(frameNumber/this.state.row);
+    const frameRow = Math.floor(frameNumber/this.state.col);
     const isFrameWithBorder = frameRow === 0;
     
     return (isFrameWithBorder && (this.state.yBorder || 0)) +

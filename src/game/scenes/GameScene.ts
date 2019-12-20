@@ -4,33 +4,32 @@ import { Camera } from 'core/camera';
 
 import {Ground, Player, Fps} from 'game/entities';
 // @ts-ignore
-import knightSprite from 'game/assets/knight.png';
+import footmanSprite from 'game/assets/footman.png';
 // @ts-ignore
-import atlas from 'game/assets/atlas.png';
-import * as tilemap from 'game/levels/gameScene.json';
-import * as tileset from 'game/assets/atlas.json';
+import atlas from 'game/assets/summer_atlas.png';
+import * as tilemap from 'game/levels/defaultScene.json';
 
 export const GameScene = new Scene({
   fill: '#000',
   map: {
-    tileset,
+    tileset: tilemap.tilesets[0],
     tilemap,
     atlas: 'atlas',
   },
   preload: (scene) => {
-    scene.assets.addSprite('grunt', {
-      width: 75,
-      height: 103.75,
-      url: knightSprite,
-      col: 4,
-      row: 12,
+    scene.assets.addSprite('footman', {
+      width: 64,
+      height: 64,
+      url: footmanSprite,
+      col: 13,
+      row: 21,
     });
     scene.assets.addTileMap('atlas', {
       url: atlas,
     });
   },
   create: (scene) => {
-    const { map: { tilemap, tileset } } = scene.state;
+    const { map: { tilemap } } = scene.state;
     const mapWidth = tilemap.width * tilemap.tilewidth;
     const mapHeight = tilemap.height * tilemap.tileheight;
     const fpsMeter = new Fps({
@@ -47,29 +46,29 @@ export const GameScene = new Scene({
     });
     const playerAnimation = new AnimationGroup({
       top: new Animation({
-        frames: [36,37,38],
-        speed: 3,
+        frames: [105, 106, 107, 108, 109, 110, 111, 112, 113],
+        speed: 1,
       }),
       left: new Animation({
-        frames: [12,13,14],
-        speed: 3,
+        frames: [126, 127, 128, 129, 130, 131, 132, 133, 134, 135],
+        speed: 1,
       }),
       right: new Animation({
-        frames: [24,25,26],
-        speed: 3,
+        frames: [131, 132, 133, 134, 135, 136, 137, 138, 139],
+        speed: 1,
       }),
       down: new Animation({
-        frames: [0,1,2],
-        speed: 3,
+        frames: [122, 123, 124, 125, 126, 127, 128, 129, 130],
+        speed: 1,
       })
     });
-    const playerSprite = scene.assets.getSprite('grunt');
+    const playerSprite = scene.assets.getSprite('footman');
     playerSprite.useAnimation(playerAnimation);
     const player = new Player({
       width: 32,
-      height: 20,
-      posX: 70,
-      posY: 90,
+      height: 32,
+      posX: 210,
+      posY: 210,
       fill: 'white',
       preventLoss: true,
       physics: {
@@ -77,7 +76,6 @@ export const GameScene = new Scene({
         gravityX: 0,
       },
       sprite: playerSprite,
-      scaleHeight: 30,
     });
     
     scene.useEntities([
@@ -88,6 +86,6 @@ export const GameScene = new Scene({
       follow: player,
       width: window.innerWidth > mapWidth ? mapWidth : window.innerWidth,
       height: window.innerHeight > mapHeight ? mapHeight : window.innerHeight,
-    }))
+    }));
   }
 });
