@@ -11,14 +11,16 @@ export interface ICamera {
     y: number;
     maxX: number;
     maxY: number;
+    scale?: number;
   };
   setState: (state: any) => void;
 }
 
 export interface ICameraInitialState {
-  follow: IEntity,
-  width: number,
-  height: number,
+  follow?: IEntity;
+  width: number;
+  height: number;
+  scale?: number;
 }
 
 export class Camera implements ICamera {
@@ -33,8 +35,8 @@ export class Camera implements ICamera {
   }
   
   private setCoords = () => {
-    const {follow, width, height, maxX, maxY} = this.state;
-    let [x, y] = [follow.state.posX - (width / 4), follow.state.posY - (height / 4)];
+    const {follow, width, height, maxX, maxY, scale = 1} = this.state;
+    let [x, y] = [follow.state.posX - (width / 4 / scale), follow.state.posY - (height / 4 / scale)];
   
     if (x > maxX) x = maxX;
     if (x < 0) x = 0;

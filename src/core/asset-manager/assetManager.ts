@@ -16,7 +16,7 @@ export class AssetManager implements IAssetsManager {
         
         }
       },
-      tilemaps: {
+      tilesets: {
         loaded: {
         
         },
@@ -35,10 +35,10 @@ export class AssetManager implements IAssetsManager {
   
   public addSprite = (key, config) => this.assets.sprites.queue[key] = config;
   
-  public getTilemap = (key) => this.getAsset('tilemaps', key);
-  public setTilemap = (key, map) => this.setAsset('tilemaps', key, map);
+  public getTileset = (key) => this.getAsset('tilesets', key);
   
-  public addTileMap = (key, config) => this.assets.tilemaps.queue[key] = config;
+  public setTileset = (key, map) => this.setAsset('tilesets', key, map);
+  public addTileset = (key, config) => this.assets.tilesets.queue[key] = config;
   
   public load = async () => {
     try {
@@ -54,8 +54,8 @@ export class AssetManager implements IAssetsManager {
                   }));
                   delete this.assets[type].queue[key];
                   break;
-                case 'tilemaps':
-                  this.setTilemap(key, {
+                case 'tilesets':
+                  this.setTileset(key, {
                     image: (await this.loader.sprite(this.assets[type].queue[key].url)),
                   });
                   break;

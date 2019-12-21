@@ -57,35 +57,40 @@ export class Scene implements IScene {
     });
   };
   
-  private renderMap = (context: CanvasRenderingContext2D, xOffset: number = 0, yOffset: number = 0, width: number = 0, height: number = 0) => {
-    const { map: { tileset, tilemap, atlas } } = this.state;
-    const { image } = this.assets.getTilemap(atlas);
-    const { layers, tileheight, tilewidth } = tilemap;
+  private renderLayer = (context, tilemap, tileset, layer, image) => {
+    const { data: tiles } = layer;
     const { columns, spacing = 0 } = tileset;
+    const { tileheight, tilewidth } = tilemap;
+    const { x: xOffset, y: yOffset} = this.state.camera.state;
+  
+    if (!layer.visible) return;
+  
+    for(let col = 0; col < layer.width; col++) {
+      for(let row = 0; row < layer.height; row ++) {
+        const tile = tiles[row * layer.width + col] - 1;
+      
+        if (tile <= 0) continue;
+        context.drawImage(
+          image,
+          tilewidth * (tile - Math.floor(tile/columns) * columns) + (spacing * (tile - Math.floor(tile/columns) * columns)),
+          tileheight * Math.floor(tile/columns) + spacing * Math.floor(tile/columns),
+          tilewidth,
+          tileheight,
+          col * tilewidth + Math.floor(-xOffset),
+          row * tileheight + Math.floor(-yOffset),
+          tilewidth,
+          tileheight,
+        );
+      }
+    }
+  };
+  
+  private renderMap = (context: CanvasRenderingContext2D, xOffset: number = 0, yOffset: number = 0, width: number = 0, height: number = 0) => {
+    const { map: { tileset, tilemap: { layers }, atlas, tilemap } } = this.state;
+    const { image } = this.assets.getTileset(atlas);
 
     layers.forEach((layer) => {
-      const { data: tiles } = layer;
-
-      if (!layer.visible) return;
-
-      for(let col = 0; col < layer.width; col++) {
-        for(let row = 0; row < layer.height; row ++) {
-          const tile = tiles[row * layer.width + col] - 1;
-          
-          if (tile <= 0) continue;
-          context.drawImage(
-            image,
-            tilewidth * (tile - Math.floor(tile/columns) * columns) + (spacing * (tile - Math.floor(tile/columns) * columns)),
-            tileheight * Math.floor(tile/columns) + spacing * Math.floor(tile/columns),
-            tilewidth,
-            tileheight,
-            col * tilewidth + Math.floor(xOffset),
-            row * tileheight + Math.floor(yOffset),
-            tilewidth,
-            tileheight,
-          );
-        }
-      }
+      this.renderLayer(context, tilemap, tileset, layer, image);
     });
   };
 
@@ -95,22 +100,13 @@ export class Scene implements IScene {
     if (!this.game.state.layer) {
       return void console.warn(`Can't render scene in game. Layer not defined. Use useLayer method of Game class to define it.`);
     }
-    if (camera) {
-      this.game.state.layer.height = camera.state.height;
-      this.game.state.layer.width = camera.state.width;
-      this.renderCamera(context);
-    } else if (map) {
+    if (map) {
       this.renderMap(context);
     } else {
       context.fillStyle = this.state.fill;
       context.fillRect(0,0, width, height);
     }
     this.renderEntities(context);
-  };
-  
-  private renderCamera = (context) => {
-    const { camera } = this.state;
-    this.renderMap(context, -camera.state.x, -camera.state.y);
   };
   
   private renderEntities = (context) => {
@@ -129,11 +125,14 @@ export class Scene implements IScene {
         } = entity.state;
   
         if (sprite) {
-          sprite.render(context, {
-            ...entity.state,
-            posX: entity.state.posX - camera.state.x,
-            posY: entity.state.posY - camera.state.y,
-          });
+          sprite.render(
+            context,
+            {
+              ...entity.state,
+              posX: entity.state.posX - camera.state.x,
+              posY: entity.state.posY - camera.state.y,
+            }
+          );
         } else if (textContent) {
           textContent.forEach((textItem) => {
             const { content, x, y, font, color, id, width, height } = textItem;
@@ -198,7 +197,17 @@ export class Scene implements IScene {
   public useCamera = (camera: ICamera) => {
     const { height, tileheight, width, tilewidth } = this.state.map.tilemap;
     this.setState({ camera });
-    camera.setState({ maxX: width * tilewidth - camera.state.width , maxY: height * tileheight - camera.state.height });
+    if (camera.state.scale) {
+      this.game.state.layer.style.transform = `scale(${camera.state.scale})`;
+      this.game.state.layer.style.marginTop = `${camera.state.height * (camera.state.scale - 1)/2}px`;
+      this.game.state.layer.style.marginLeft = `${camera.state.width * (camera.state.scale - 1)/2}px`;
+    }
+    camera.setState({
+      maxX: width * tilewidth - camera.state.width,
+      maxY: height * tileheight - camera.state.height
+    });
+    this.game.state.layer.height = camera.state.height;
+    this.game.state.layer.width = camera.state.width;
   };
   
   public destroy = () => {

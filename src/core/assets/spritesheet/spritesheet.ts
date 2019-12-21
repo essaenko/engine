@@ -6,7 +6,15 @@ export class SpriteSheet implements ISpriteSheet {
     this.state = initState;
   }
   
-  xCoord = (frameNumber: number) => {
+  xCoord = (frameNumber: number | number[]) => {
+    if (Array.isArray(frameNumber)) {
+      const isFrameWithBorder = frameNumber[0] === 0;
+
+      return (isFrameWithBorder && (this.state.xBorder || 0)) +
+        (!isFrameWithBorder && (this.state.xOffset || 0)) +
+        this.state.width * frameNumber[0];
+    }
+
     const frameColumn = frameNumber % this.state.row;
     const isFrameWithBorder = frameColumn === 0;
     
@@ -15,7 +23,13 @@ export class SpriteSheet implements ISpriteSheet {
     this.state.width * frameColumn;
   };
   
-  yCoord = (frameNumber) => {
+  yCoord = (frameNumber: number | number[]) => {
+    if (Array.isArray(frameNumber)) {
+      const isFrameWithBorder = frameNumber[1] === 0;
+  
+      return (isFrameWithBorder && (this.state.yBorder || 0)) +
+        (!isFrameWithBorder && (this.state.yOffset || 0)) + this.state.height * frameNumber[1];
+    }
     const frameRow = Math.floor(frameNumber/this.state.col);
     const isFrameWithBorder = frameRow === 0;
     
@@ -95,7 +109,7 @@ export class SpriteSheet implements ISpriteSheet {
   
   render = (context, props) => {
     const { getPosition, getFrame, state: { animation } } = this;
-    const { animation: animationType, width, height, scaleHeight } = props;
+    const { animation: animationType, width, height, scaleHeight, scaleWidth } = props;
     let params = [];
 
     if (animation) {
@@ -103,15 +117,15 @@ export class SpriteSheet implements ISpriteSheet {
         params = [
           ...getFrame(animation.state[animationType].getFrameNumber()),
           ...getPosition(props),
-          width,
+          width + scaleWidth,
           height + scaleHeight,
         ];
       } else {
         params = [
           ...getFrame(animation.getFrameNumber()),
           ...getPosition(props),
-          width,
-          height,
+          width + scaleWidth,
+          height + scaleHeight,
         ];
       }
     } else {

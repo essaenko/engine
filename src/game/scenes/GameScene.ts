@@ -24,7 +24,7 @@ export const GameScene = new Scene({
       col: 13,
       row: 21,
     });
-    scene.assets.addTileMap('atlas', {
+    scene.assets.addTileset('atlas', {
       url: atlas,
     });
   },
@@ -46,29 +46,29 @@ export const GameScene = new Scene({
     });
     const playerAnimation = new AnimationGroup({
       top: new Animation({
-        frames: [105, 106, 107, 108, 109, 110, 111, 112, 113],
-        speed: 1,
+        frames: [[0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8], [8,8]],
+        speed: 2,
       }),
       left: new Animation({
-        frames: [126, 127, 128, 129, 130, 131, 132, 133, 134, 135],
-        speed: 1,
+        frames: [[0,9], [1,9], [2,9], [3,9], [4,9], [5,9], [6,9], [7,9], [8,9]],
+        speed: 2,
       }),
       right: new Animation({
-        frames: [131, 132, 133, 134, 135, 136, 137, 138, 139],
-        speed: 1,
+        frames: [[0,11], [1,11], [2,11], [3,11], [4,11], [5,11], [6,11], [7,11], [8,11]],
+        speed: 2,
       }),
       down: new Animation({
-        frames: [122, 123, 124, 125, 126, 127, 128, 129, 130],
-        speed: 1,
+        frames: [[0,10], [1,10], [2,10], [3,10], [4,10], [5,10], [6,10], [7,10], [8,10]],
+        speed: 2,
       })
     });
     const playerSprite = scene.assets.getSprite('footman');
     playerSprite.useAnimation(playerAnimation);
     const player = new Player({
-      width: 32,
-      height: 32,
-      posX: 210,
-      posY: 210,
+      width: 22,
+      height: 22,
+      posX: 230,
+      posY: 350,
       fill: 'white',
       preventLoss: true,
       physics: {
@@ -76,6 +76,8 @@ export const GameScene = new Scene({
         gravityX: 0,
       },
       sprite: playerSprite,
+      scaleHeight: 10,
+      scaleWidth: 10,
     });
     
     scene.useEntities([
@@ -84,8 +86,9 @@ export const GameScene = new Scene({
     ]);
     scene.useCamera(new Camera({
       follow: player,
-      width: window.innerWidth > mapWidth ? mapWidth : window.innerWidth,
-      height: window.innerHeight > mapHeight ? mapHeight : window.innerHeight,
+      width: 850,
+      height: 605,
+      scale: 1.7,
     }));
   }
 });
