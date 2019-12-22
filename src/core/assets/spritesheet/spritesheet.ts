@@ -83,7 +83,7 @@ export class SpriteSheet implements ISpriteSheet {
         y = posY;
         break;
     }
-    x -= scaleWidth;
+    x -= scaleWidth/2;
     y -= scaleHeight;
     
     return [x, y];

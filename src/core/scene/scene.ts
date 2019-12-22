@@ -12,7 +12,8 @@ export interface ISceneInitialState {
     tileset: any,
     tilemap: any,
     atlas: string,
-  }
+  },
+  name?: string,
 }
 
 export class Scene implements IScene {
@@ -34,26 +35,64 @@ export class Scene implements IScene {
   };
   
   public checkCollisions = (entity: IEntity) => {
-    const { tilemap: { height: tmHeight, tileheight: theight, tilewidth: tWidth, layers }, tileset } = this.state.map;
+    const { tilemap: { width: tmWidth, height: tmHeight, tileheight: tHeight, tilewidth: tWidth, layers }, tileset: { tiles } } = this.state.map;
 
-    if (!tileset.tiles) return;
+    if (!tiles) return void 0;
 
     const { posX, posY, state } = entity;
-    const [nextX, nextY] = [
-      (state.posX + posX + (posX > 0 ? state.width : 0)),
-      (state.posY + posY + (posY > 0 ? state.height : 0))
-    ];
-    layers.forEach(({ data, visible }) => {
-      if (!visible) return;
+    let [nextX, nextY] = [ (state.posX + posX), (state.posY + posY) ];
+    layers.forEach(({ data, visible, name }) => {
+      if (!visible) return void 0;
       
-      const tileID = data[Math.floor(nextY / theight) * tmHeight + Math.floor(nextX/tWidth)] - 1;
-      const tile = tileset.tiles.filter((tile) => tile.id === tileID)[0];
+      const collisionMap = data.reduce((acc, item, index) => {
+        const tile = tiles.filter((tile) => tile.id === item - 1)[0];
+        if (tile && tile.properties.some(({ name, value }) => (name === 'collision' && value))) {
+          acc.push(item - 1);
+        } else {
+          acc.push(null);
+        }
+
+        return acc
+      }, []);
+
+      collisionMap.forEach((tile, index) => {
+        if (tile === null) return void 0;
+
+        const [tPosX, tPosY] = [
+          ((index - Math.floor(index/tmHeight) * tmWidth) * tWidth),
+          (Math.floor(index/tmHeight) * tHeight)
+        ];
+        
+        if (
+          (nextX < tPosX + tWidth) &&
+          (nextX + state.width > tPosX) &&
+          (nextY < tPosY + tHeight) &&
+          (nextY + state.height > tPosY)
+        ) {
+          if (
+            (nextX < tPosX + tWidth) &&
+            (nextX + state.width > tPosX)
+          ) {
+            entity.posX = 0;
+          }
+          if (
+            (nextY < tPosY + tHeight) &&
+            (nextY + state.height > tPosY)
+          ) {
+            entity.posY = 0;
+          }
+        }
+      });
+      
+      // let tileID = data[Math.floor(nextY/theight) * tmHeight + Math.floor(nextX/tWidth)] - 1;
+      // let tile = tileset.tiles.filter((tile) => tile.id === tileID)[0];
   
-      if (tile && tile.properties.some(({ name, value }) => (name === 'collision' && value))) {
-        entity.posX = 0;
-        entity.posY = 0;
-        return;
-      }
+      // if (tile && tile.properties.some(({ name, value }) => (name === 'collision' && value))) {
+      //   entity.posX = 0;
+      //   entity.posY = 0;
+        
+      //   return void 0;
+      // }
     });
   };
   
@@ -63,7 +102,7 @@ export class Scene implements IScene {
     const { tileheight, tilewidth } = tilemap;
     const { x: xOffset, y: yOffset} = this.state.camera.state;
   
-    if (!layer.visible) return;
+    if (!layer.visible) return void 0;
   
     for(let col = 0; col < layer.width; col++) {
       for(let row = 0; row < layer.height; row ++) {
@@ -108,6 +147,12 @@ export class Scene implements IScene {
     }
     this.renderEntities(context);
   };
+
+  private drawDebugShape = (context: CanvasRenderingContext2D, { state: { posX, posY, width, height } }: IEntity) => {
+    const { camera: { state: { x: xOffset, y: yOffset } } } = this.state;
+    context.fillStyle = 'red';
+    context.fillRect(posX - xOffset, posY - yOffset, width, height);
+  }
   
   private renderEntities = (context) => {
     const { camera } = this.state;
@@ -150,8 +195,7 @@ export class Scene implements IScene {
           context.fillRect(posX, posY, width, height);
         }
         if (drawShape) {
-          context.fillStyle = 'red';
-          context.fillRect(posX, posY, width, height);
+          this.drawDebugShape(context, entity);
         }
       });
     }

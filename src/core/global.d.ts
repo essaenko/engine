@@ -10,13 +10,31 @@ declare interface ILoop {
   intervalId: number;
 }
 
+declare interface ISpriteConfig {
+  width: number;
+  height: number;
+  url: string;
+  col: number;
+  row: number;
+  xBorder?: number;
+  yBorder?: number;
+  xOffset?: number;
+  yOffset?: number;
+}
+
+declare interface ITilesetConfig {
+  url: string;
+}
+
 declare interface IAssetsManager {
   assets: {
     sprites: {
       loaded: Dict<ISpriteSheet>,
       queue: Dict<ISpriteSheetConfig>
     }
-  }
+  };
+  addSprite: (key: string, config: ISpriteConfig) => void;
+  addTileset: (key: string, config: ITilesetConfig) => void;
 }
 
 declare interface ISpriteSheetConfig {
@@ -28,7 +46,16 @@ declare interface ISpriteSheet {
 }
 
 interface ISceneState {
-
+  fill?: string;
+  preload?: (IScene) => void;
+  create?: (IScene) => void;
+  update?: (IScene) => void;
+  map?: {
+    tileset: any,
+    tilemap: any,
+    atlas: string,
+  },
+  name?: string,
 }
 
 declare interface IScene {

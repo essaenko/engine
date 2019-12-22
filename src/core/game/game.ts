@@ -57,6 +57,7 @@ export class Game implements IGame {
     this.setState({ scene });
     this.applyScene().then(() => {
       Core.eventBus.subscribe('loop:tick', this.render);
+      Core.eventBus.dispatch('game:scene:change', { scene });
     });
   };
   
@@ -97,4 +98,7 @@ export class Game implements IGame {
     Core.eventBus.dispatch('game:start');
     Core.eventBus.subscribe('loop:tick', this.render);
   }
+
+  public subscribe = Core.eventBus.subscribe;
+  public unsubscribe = Core.eventBus.unsubscribe;
 }
