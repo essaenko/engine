@@ -1,32 +1,9 @@
 import { Core } from 'core/core';
 
-import { IEntity } from 'core/entity/entity';
-
-export interface ICamera {
-  state: {
-    follow: IEntity;
-    width: number;
-    height: number;
-    x: number;
-    y: number;
-    maxX: number;
-    maxY: number;
-    scale?: number;
-  };
-  setState: (state: any) => void;
-}
-
-export interface ICameraInitialState {
-  follow?: IEntity;
-  width: number;
-  height: number;
-  scale?: number;
-}
-
 export class Camera implements ICamera {
   public state;
 
-  constructor(initialState: ICameraInitialState) {
+  constructor(initialState: ICameraConfig) {
     this.state = {
       ...initialState,
     };

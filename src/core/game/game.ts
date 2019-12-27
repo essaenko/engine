@@ -1,12 +1,5 @@
 import { Core } from 'core/core';
 
-export interface IGameInitialState {
-  width?: number;
-  height?: number;
-  layer?: string;
-  scene?: IScene;
-}
-
 export class Game implements IGame {
   public state;
 

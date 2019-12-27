@@ -1,20 +1,6 @@
 import { AssetManager } from 'core/asset-manager';
-import {ICamera} from 'core/camera/camera';
-import {IEntity} from 'core/entity/entity';
 import { Core } from 'core/core';
-
-export interface ISceneInitialState {
-  fill?: string;
-  preload?: (IScene) => void;
-  create?: (IScene) => void;
-  update?: (IScene) => void;
-  map?: {
-    tileset: any,
-    tilemap: any,
-    atlas: string,
-  },
-  name?: string,
-}
+import {Graph} from 'core/pathfinder/graph';
 
 export class Scene implements IScene {
   public state;
@@ -24,6 +10,13 @@ export class Scene implements IScene {
 
   constructor(initialState: ISceneInitialState = {}) {
     this.state = {...initialState};
+    if (initialState.map) {
+      this.state.mapGraph = new Graph({
+        width: initialState.map.tilemap.width,
+        height: initialState.map.tilemap.height,
+        map: initialState.map.tilemap.layers.filter(({ name }) => name === 'collision')[0].data,
+      });
+    }
     this.assets = new AssetManager();
   }
   
@@ -41,58 +34,46 @@ export class Scene implements IScene {
 
     const { posX, posY, state } = entity;
     let [nextX, nextY] = [ (state.posX + posX), (state.posY + posY) ];
-    layers.forEach(({ data, visible, name }) => {
-      if (!visible) return void 0;
-      
-      const collisionMap = data.reduce((acc, item, index) => {
-        const tile = tiles.filter((tile) => tile.id === item - 1)[0];
-        if (tile && tile.properties.some(({ name, value }) => (name === 'collision' && value))) {
-          acc.push(item - 1);
-        } else {
-          acc.push(null);
-        }
-
-        return acc
-      }, []);
-
-      collisionMap.forEach((tile, index) => {
-        if (tile === null) return void 0;
-
-        const [tPosX, tPosY] = [
-          ((index - Math.floor(index/tmHeight) * tmWidth) * tWidth),
-          (Math.floor(index/tmHeight) * tHeight)
-        ];
-        
+    const { data, visible } = layers.filter((layer) => layer.name === 'collision')[0];
+    if (visible) return void 0;
+  
+    const collisionMap = data.reduce((acc, item) => {
+      if (item !== 0) {
+        acc.push(item - 1);
+      } else {
+        acc.push(null);
+      }
+    
+      return acc
+    }, []);
+  
+    collisionMap.forEach((tile, index) => {
+      if (tile === null) return void 0;
+    
+      const [tPosX, tPosY] = [
+        ((index - Math.floor(index/tmHeight) * tmWidth) * tWidth),
+        (Math.floor(index/tmHeight) * tHeight)
+      ];
+    
+      if (
+        (nextX < tPosX + tWidth) &&
+        (nextX + state.width > tPosX) &&
+        (nextY < tPosY + tHeight) &&
+        (nextY + state.height > tPosY)
+      ) {
         if (
           (nextX < tPosX + tWidth) &&
-          (nextX + state.width > tPosX) &&
+          (nextX + state.width > tPosX)
+        ) {
+          entity.posX = 0;
+        }
+        if (
           (nextY < tPosY + tHeight) &&
           (nextY + state.height > tPosY)
         ) {
-          if (
-            (nextX < tPosX + tWidth) &&
-            (nextX + state.width > tPosX)
-          ) {
-            entity.posX = 0;
-          }
-          if (
-            (nextY < tPosY + tHeight) &&
-            (nextY + state.height > tPosY)
-          ) {
-            entity.posY = 0;
-          }
+          entity.posY = 0;
         }
-      });
-      
-      // let tileID = data[Math.floor(nextY/theight) * tmHeight + Math.floor(nextX/tWidth)] - 1;
-      // let tile = tileset.tiles.filter((tile) => tile.id === tileID)[0];
-  
-      // if (tile && tile.properties.some(({ name, value }) => (name === 'collision' && value))) {
-      //   entity.posX = 0;
-      //   entity.posY = 0;
-        
-      //   return void 0;
-      // }
+      }
     });
   };
   
@@ -124,10 +105,9 @@ export class Scene implements IScene {
     }
   };
   
-  private renderMap = (context: CanvasRenderingContext2D, xOffset: number = 0, yOffset: number = 0, width: number = 0, height: number = 0) => {
-    const { map: { tileset, tilemap: { layers }, atlas, tilemap } } = this.state;
+  private renderMap = (context: CanvasRenderingContext2D) => {
+    const { map: { tileset, tilemap: { layers, width, height }, atlas, tilemap } } = this.state;
     const { image } = this.assets.getTileset(atlas);
-
     layers.forEach((layer) => {
       this.renderLayer(context, tilemap, tileset, layer, image);
     });
@@ -152,12 +132,19 @@ export class Scene implements IScene {
     const { camera: { state: { x: xOffset, y: yOffset } } } = this.state;
     context.fillStyle = 'red';
     context.fillRect(posX - xOffset, posY - yOffset, width, height);
-  }
+  };
+  
+  private get sortedEntities () {
+    return this.entities.sort(
+      ({ state: { posY: e1PosY } }, { state: { posY: e2PosY } }) =>
+        e1PosY > e2PosY ? 1 : e1PosY < e2PosY ? -1 : 0
+    )
+  };
   
   private renderEntities = (context) => {
     const { camera } = this.state;
     if (this.entities) {
-      this.entities.forEach(entity => {
+      this.sortedEntities.forEach(entity => {
         let {
           posX,
           posY,

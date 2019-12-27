@@ -28,21 +28,16 @@ export class Player extends Entity {
       moveX = -1;
       this.updateAnimation('left', true);
     }
+  
+    if (this.input.isKeyPressed('E')) {
+      this.followEntity(this.collisions[0]);
+    }
+  
+    if (this.input.isKeyPressed('Q')) {
+      this.stopFollow();
+    }
     
     this.posY += speed * moveY;
     this.posX += speed * moveX;
   };
-  
-  updateAnimation = (animation, play?) => {
-    if (this.state.sprite) {
-      if (animation) {
-        this.setState({ animation });
-        if (play) {
-          this.state.sprite.animation.state[animation].play();
-        }
-      } else {
-        this.state.sprite.animation.state[this.state.animation].stop();
-      }
-    }
-  }
 }

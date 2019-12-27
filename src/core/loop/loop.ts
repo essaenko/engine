@@ -1,34 +1,36 @@
 export class Loop implements ILoop {
-  public eventBus;
-  public intervalId;
+  public eventBus: IEventBus;
+  public pressed: number[] = [];
 
   constructor(eventBus) {
     this.eventBus = eventBus;
     this.initListeners();
+    
+    return void 0;
   }
 
-  pressed = [];
-
-  private initListeners = () => {
-    document.addEventListener('keydown', ({keyCode}) => {
+  private initListeners = (): void => {
+    document.addEventListener('keydown', ({ keyCode }: KeyboardEvent) => {
       if (!this.pressed.includes(keyCode)) {
         this.pressed.push(keyCode);
       }
     });
-    document.addEventListener('keyup', ({ keyCode }) => {
+    document.addEventListener('keyup', ({ keyCode }: KeyboardEvent) => {
       this.pressed.splice(this.pressed.indexOf(keyCode), 1);
     });
-    this.eventBus.subscribe('game:start', this.initLoop);
+
+    return void this.eventBus.subscribe('game:start', this.initLoop);
   };
 
-  private initLoop = () => {
-    window.requestAnimationFrame(this.tick);
+  private initLoop = (): void => {
+    return void window.requestAnimationFrame(this.tick);
   };
 
-  private tick = () => {
+  private tick = (): void => {
     this.eventBus.dispatch('loop:tick', {
       pressed: this.pressed,
     });
-    window.requestAnimationFrame(this.tick);
+
+    return void window.requestAnimationFrame(this.tick);
   }
 }

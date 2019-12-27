@@ -1,12 +1,13 @@
 import {AnimationGroup} from '../animation';
 
 export class SpriteSheet implements ISpriteSheet {
-  public state;
-  constructor(initState = {}) {
+  public state: ISpriteState;
+
+  constructor(initState: ISpriteState) {
     this.state = initState;
   }
   
-  xCoord = (frameNumber: number | number[]) => {
+  private xCoord = (frameNumber: number | number[]) => {
     if (Array.isArray(frameNumber)) {
       const isFrameWithBorder = frameNumber[0] === 0;
 
@@ -23,7 +24,7 @@ export class SpriteSheet implements ISpriteSheet {
     this.state.width * frameColumn;
   };
   
-  yCoord = (frameNumber: number | number[]) => {
+  private yCoord = (frameNumber: number | number[]) => {
     if (Array.isArray(frameNumber)) {
       const isFrameWithBorder = frameNumber[1] === 0;
   
@@ -37,7 +38,7 @@ export class SpriteSheet implements ISpriteSheet {
     (!isFrameWithBorder && (this.state.yOffset || 0)) + this.state.height * frameRow;
   };
   
-  getPosition = (props) => {
+  private getPosition = (props) => {
     const {
       collisionShape,
       posX,
@@ -89,7 +90,7 @@ export class SpriteSheet implements ISpriteSheet {
     return [x, y];
   };
   
-  getFrame = (frameNumber) => {
+  public getFrame = (frameNumber) => {
     return [
       this.state.image,
       this.xCoord(frameNumber),
@@ -107,7 +108,7 @@ export class SpriteSheet implements ISpriteSheet {
     return this.state.animation;
   }
   
-  render = (context, props) => {
+  public render = (context, props) => {
     const { getPosition, getFrame, state: { animation } } = this;
     const { animation: animationType, width, height, scaleHeight, scaleWidth } = props;
     let params = [];
@@ -121,12 +122,14 @@ export class SpriteSheet implements ISpriteSheet {
           height + scaleHeight,
         ];
       } else {
-        params = [
-          ...getFrame(animation.getFrameNumber()),
-          ...getPosition(props),
-          width + scaleWidth,
-          height + scaleHeight,
-        ];
+        if ('getFrameNumber' in animation) {
+          params = [
+            ...getFrame(animation.getFrameNumber()),
+            ...getPosition(props),
+            width + scaleWidth,
+            height + scaleHeight,
+          ];
+        }
       }
     } else {
       params = [
