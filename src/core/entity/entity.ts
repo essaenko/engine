@@ -32,9 +32,16 @@ export class Entity implements IEntity {
   
   public setState = (state) => this.state = { ...this.state, ...state };
   
-  private pathToEntity = (entity: IEntity): IPath => {
+  private pathToEntity = (target: IEntity | IPathNode): IPath => {
     const { posX, posY, scene: { state: { map: { tilemap: map } } } } = this.state;
-    const { posX: ePosX, posY: ePosY } = entity.state;
+    let ePosX, ePosY;
+    if ('state' in target) {
+      ePosX = target.state.posX;
+      ePosY = target.state.posY;
+    } else {
+      ePosX = target.x;
+      ePosY = target.y;
+    }
 
     const selfPos = [Math.floor(posX/map.tilewidth), Math.floor(posY/map.tileheight)];
     const entityPos = [Math.floor(ePosX/map.tilewidth), Math.floor(ePosY/map.tileheight)];
@@ -52,6 +59,17 @@ export class Entity implements IEntity {
       
       return acc;
     }, {});
+  };
+  
+  public followNode = (pathNode: IPathNode): void => {
+    if (!this.state.following || this.state.following.entity !== pathNode) {
+      this.setState({
+        following: {
+          entity: pathNode,
+          path: this.pathToEntity(pathNode),
+        },
+      });
+    }
   };
   
   public followEntity = (entity: IEntity): void => {

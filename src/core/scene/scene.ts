@@ -1,6 +1,7 @@
 import { AssetManager } from 'core/asset-manager';
 import { Core } from 'core/core';
 import {Graph} from 'core/pathfinder/graph';
+import { logger } from 'game/utils/logger';
 
 export class Scene implements IScene {
   public state;
@@ -203,8 +204,17 @@ export class Scene implements IScene {
       this.state.create(this);
     }
   };
+
+  public near = (sercher: IPathNode, distance: number, exclude?: IEntity[]): IEntity => {
+    return this.entities.filter((entity) => {
+        if (exclude.includes(entity)) return false;
+
+        return Math.abs(sercher.x - entity.state.posX) <= distance && Math.abs(sercher.y - entity.state.posY) <= distance
+      }
+    ).sort((a,b) => a - b || 0)[0];
+  };
   
-  public useEntities = (entities) => {
+  public useEntities = (entities: IEntity[]) => {
     this.entities = entities;
     this.entities.forEach(({ state: { textContent }, init }) => {
       if (textContent) {

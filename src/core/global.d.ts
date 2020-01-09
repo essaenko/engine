@@ -83,11 +83,9 @@ declare interface IEntity {
     following: {
       entity: IEntity,
       path: IPath,
-      point: {
-        x: number,
-        y: number,
-      }
+      point: IPathNode
     };
+    target: IEntity;
   };
   input: any;
   collisions: IEntity[];
@@ -140,6 +138,7 @@ declare interface ISceneState {
 declare interface IScene {
   render: (context: CanvasRenderingContext2D) => void;
   usedByGame: (game: IGame) => void;
+  near: (searcher: IPathNode, distance: number, exclude?: IEntity[]) => IEntity;
   state: ISceneState;
   assets: IAssetsManager;
   destroy: () => void;
@@ -172,16 +171,12 @@ declare interface IPathFinder {
 
 declare interface IPath {
   length: number,
-  [key: number]: {
-    x: number,
-    y: number,
-  }
+  [key: number]: IPathNode
 }
 
 declare interface IPathNode {
   x: number;
   y: number;
-  cost: number;
 }
 
 declare interface IGraphConfig {
@@ -193,6 +188,7 @@ declare interface IGraphConfig {
 declare interface IGraph {
   neighbors: (item: number[]) => IPathNode[];
   getNode: (item: number[]) => IPathNode;
+  getCost: (from: IPathNode, to: IPathNode) => number;
 }
 
 declare interface IQueueConfig {

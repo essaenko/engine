@@ -65,7 +65,7 @@ export class PathFinder implements IPathFinder {
 
       neighbors.forEach((neighbor: IPathNode) => {
         const oldCost = this.costs[`${neighbor.x}:${neighbor.y}`];
-        const newCost = this.costs[`${this.current.x}:${this.current.y}`] + neighbor.cost;
+        const newCost = this.costs[`${this.current.x}:${this.current.y}`] + graph.getCost(this.current, neighbor);
         if (!oldCost || newCost < oldCost) {
           this.costs[`${neighbor.x}:${neighbor.y}`] = newCost;
           const proirity = newCost + this.heuristic(neighbor);

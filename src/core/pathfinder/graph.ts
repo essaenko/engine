@@ -19,10 +19,14 @@ export class Graph implements IGraph {
         this.map[row][col] = map[row * this.height + col] === 0 && {
           x: col,
           y: row,
-          cost: 1,
         };
       }
     }
+  };
+
+  public getCost = (from: IPathNode, to: IPathNode): number => {
+    if (from.x !== to.x && from.y !== to.y) return 1.5;
+    return 1;
   };
   
   public getNode = (item: number[]): IPathNode => {
@@ -35,6 +39,28 @@ export class Graph implements IGraph {
     if (this.map[item[1] - 1][item[0]]) neighbors.push(this.map[item[1] - 1][item[0]]);
     if (this.map[item[1]][item[0] - 1]) neighbors.push(this.map[item[1]][item[0] - 1]);
     if (this.map[item[1] + 1][item[0]]) neighbors.push(this.map[item[1] + 1][item[0]]);
+
+    if (
+      this.map[item[1] + 1][item[0] + 1] &&
+      this.map[item[1]][item[0] + 1] &&
+      this.map[item[1] + 1][item[0]]
+      ) neighbors.push(this.map[item[1] + 1][item[0] + 1]);
+    if (
+      this.map[item[1] - 1][item[0] + 1] &&
+      this.map[item[1]][item[0] + 1] &&
+      this.map[item[1] - 1][item[0]]
+      ) neighbors.push(this.map[item[1] - 1][item[0] + 1]);
+    if (
+      this.map[item[1] - 1][item[0] - 1] &&
+      this.map[item[1] - 1][item[0]] &&
+      this.map[item[1]][item[0] - 1]
+      ) neighbors.push(this.map[item[1] - 1][item[0] - 1]);
+    if (
+      this.map[item[1] + 1][item[0] - 1] &&
+      this.map[item[1] - 1][item[0]] &&
+      this.map[item[1] + 1][item[0]]
+      ) neighbors.push(this.map[item[1] + 1][item[0] - 1]);
+
     
     return neighbors;
   }

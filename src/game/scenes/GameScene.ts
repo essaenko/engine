@@ -51,7 +51,7 @@ export const GameScene = new Scene({
         height: 10,
         y: 5,
         x: 5,
-        color: '#000',
+        color: '#0fff',
         font: '10px Arial',
         id: 'fps_meter',
         content: 0,
@@ -76,7 +76,7 @@ export const GameScene = new Scene({
     const rogue = new Enimy({
       width: 15,
       height: 10,
-      posX: 300,
+      posX: 500,
       posY: 350,
       fill: 'white',
       preventLoss: true,
@@ -87,8 +87,18 @@ export const GameScene = new Scene({
       sprite: rogueSprite,
       scaleHeight: 31,
       scaleWidth: 26,
+      actions: {
+        aggro: {
+          distance: 200,
+          spawn: {
+            x: 500,
+            y: 350,
+          }
+        }, 
+      },
     });
     player.setCollision(rogue);
+    rogue.setCollision(player);
     
     scene.useEntities([
       player,
