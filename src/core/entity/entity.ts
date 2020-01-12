@@ -1,15 +1,51 @@
 import {Core} from 'core/core';
 import {KeyBoard} from 'core/input';
 import {PathFinder} from 'core/pathfinder';
+import { Scene } from 'core/scene';
+import { SpriteSheet } from 'core/assets/spritesheet';
 
-export class Entity implements IEntity {
-  public state;
-  public input;
-  public collisions;
-  public posX;
-  public posY;
-  public update;
-  public pathFinder: IPathFinder = new PathFinder();
+import { IPath, IPathNode } from 'core/pathfinder'
+
+export class Entity {
+  public render: any;
+  public state: {
+    posX: number;
+    posY: number;
+    scene: Scene;
+    width: number;
+    height: number;
+    physics: {
+      gravityX: number;
+      gravityY: number;
+    };
+    speed?: number;
+    following: {
+      entity: Entity | IPathNode,
+      path: IPath,
+      point: number
+    };
+    target: Entity;
+    fill?: string;
+    sprite?: SpriteSheet;
+    textContent?: {
+      content: string;
+      x: number;
+      y: number;
+      font: string;
+      color: string;
+      id: string;
+      width: number;
+      height: number;
+    }[];
+    drawShape: boolean;
+    animation: string;
+  };;
+  public input: any;
+  public collisions: Entity[];
+  public posX: number;
+  public posY: number;
+  public update: (event: any) => void;
+  public pathFinder: PathFinder = new PathFinder();
 
   constructor(initialState) {
     this.state = {
@@ -32,7 +68,7 @@ export class Entity implements IEntity {
   
   public setState = (state) => this.state = { ...this.state, ...state };
   
-  private pathToEntity = (target: IEntity | IPathNode): IPath => {
+  private pathToEntity = (target: Entity | IPathNode): IPath => {
     const { posX, posY, scene: { state: { map: { tilemap: map } } } } = this.state;
     let ePosX, ePosY;
     if ('state' in target) {
@@ -47,7 +83,7 @@ export class Entity implements IEntity {
     const entityPos = [Math.floor(ePosX/map.tilewidth), Math.floor(ePosY/map.tileheight)];
     const rawPath = this.pathFinder.find(selfPos, entityPos, this.state.scene.state.mapGraph);
     
-    return rawPath.reduce((acc: Dict<any>, point: string, index) => {
+    return rawPath.reduce((acc: any, point: string, index) => {
       const [x, y] = point.split(':');
       if (x && y) {
         acc[index] = {
@@ -72,7 +108,7 @@ export class Entity implements IEntity {
     }
   };
   
-  public followEntity = (entity: IEntity): void => {
+  public followEntity = (entity: Entity): void => {
     if (!this.state.following || this.state.following.entity !== entity) {
       this.setState({
         following: {
@@ -114,7 +150,7 @@ export class Entity implements IEntity {
     this.updateAnimation(false);
   };
   
-  public init = (scene: IScene) => {
+  public init = (scene: Scene) => {
     this.setState({ scene });
     Core.eventBus.subscribe('loop:tick', this.updateProxy);
   };
@@ -172,9 +208,9 @@ export class Entity implements IEntity {
     }
   };
   
-  updateAnimation = (animation, play?) => {
-    if (this.state.sprite) {
-      if (animation) {
+  updateAnimation = (animation: string | boolean, play?) => {
+    if (this.state.sprite && this.state.animation) {
+      if (typeof animation === 'string') {
         this.setState({ animation });
         if (play) {
           this.state.sprite.animation.state[animation].play();

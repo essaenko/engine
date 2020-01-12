@@ -1,10 +1,16 @@
+import { IPathNode } from 'core/pathfinder'
 
-export class Graph implements IGraph {
+export class Graph {
   private width: number = 0;
   private height: number = 0;
   private map: IPathNode[][] = [];
   
-  constructor(props: IGraphConfig) {
+  constructor(props: {
+    width: number;
+    height: number;
+    map: number[];
+  }
+  ) {
     this.width = props.width;
     this.height = props.height;
     this.denormalizeMap(props.map);

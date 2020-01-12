@@ -1,23 +1,23 @@
-export class Queue implements IQueue {
+export class Queue {
   items: any[];
 
-  constructor(props?: IQueueConfig) {
+  constructor(props?: {}) {
     this.items = [];
   }
   
-  public reset = () => {
-    this.items = [];
+  public reset = (): void => {
+    this.items = []; 
   };
   
-  public get length() {
+  public get length(): number {
     return this.items.length;
   }
   
-  public get isEmpty() {
+  public get isEmpty(): boolean {
     return this.items.length === 0;
   }
   
-  public put = (item: any, priority?: number) => {
+  public put = (item: any, priority?: number): void => {
     if (priority) {
       this.items.push({ ...item, _priority: priority });
       this.items = this.items.sort((a, b) => a['_priority'] - b['_priority']);
@@ -26,7 +26,7 @@ export class Queue implements IQueue {
     }
   };
   
-  public get = () => {
+  public get = (): any => {
     if (!this.isEmpty) {
       return this.items.shift();
     }

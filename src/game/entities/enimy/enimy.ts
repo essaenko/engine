@@ -1,6 +1,6 @@
 import {Entity} from 'core/entity';
 
-import { logger } from 'game/utils/logger';
+import { IPathNode } from 'core/pathfinder';
 
 interface IActions {
   aggro?: {

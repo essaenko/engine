@@ -1,5 +1,7 @@
+import { Animation } from './animation';
+
 export class AnimationGroup {
-  public state;
+  public state: Dict<Animation>;
 
   constructor(initState) {
     this.state = {

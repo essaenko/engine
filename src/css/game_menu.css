@@ -1,23 +1,41 @@
-#GameMenu {
-    display: none;
+canvas:hover{
+    cursor: default;
+}
+
+.game_hood {
+    background-image: url('../game/assets/menu_top.png'), url('../game/assets/menu_mid.png'), url('../game/assets/menu_bot.png');
+    background-position: top center, 0 20px, bottom center;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size: contain, 100% calc(100% - 50px), contain;
+    min-height: 100%;
+    width: calc(25% + 1px);
+    padding: 30px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 22px;
     position: absolute;
     right: 0;
-    width: 25%;
-    background: #fff;
     top: 0;
-    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    cursor: initial;
 }
 
-button {
-    display: block;
-    margin: 20px 10px;
-    padding: 10px 20px;
-    background-color: #e3e3e3;
-    border-radius: 5px;
+.game_hood:hover {
+    cursor: default;
 }
 
-button:hover {
-    cursor: pointer;
-    background-color: #e7e7e7;
-    box-shadow: 1px 1px 1px 1px #494747;
+.hood__btn {
+    background-image: url('../game/assets/button.png');
+    display: inline;
+    background-size: 100%;
+    padding: 15px 70px;
+    text-align: center;
+    font-size: 20px;
+    color: #39201a;
+    margin: 0 auto;
+}
+
+.hood__btn_exit {
+    margin-top: auto;
 }

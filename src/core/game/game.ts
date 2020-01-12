@@ -1,12 +1,26 @@
 import { Core } from 'core/core';
+import { Scene } from 'core/scene';
 
-export class Game implements IGame {
-  public state;
+export interface IGameInitialState {
+  width?: number;
+  height?: number;
+  layer?: string;
+  scene: Scene;
+}
+export class Game {
+  public state: {
+    scene: Scene;
+    width?: number;
+    height?: number;
+    layer: HTMLCanvasElement;
+    layerContext: CanvasRenderingContext2D;
+  };
 
   constructor(initialState: IGameInitialState = {
     width: 600,
     height: 400,
     layer: 'app',
+    scene: null,
   }) {
     this.state = { ...initialState, ...{
         layerContext: null,
@@ -42,7 +56,7 @@ export class Game implements IGame {
     }
   };
   
-  public useScene = (scene: IScene): void => {
+  public useScene = (scene: Scene): void => {
     Core.eventBus.unsubscribe('loop:tick', this.render);
     if (this.state.scene) {
       this.state.scene.destroy();

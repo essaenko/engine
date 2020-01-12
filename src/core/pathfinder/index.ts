@@ -1,1 +1,1 @@
-export { PathFinder } from './pathfinder';
+export { PathFinder, IPath, IPathNode } from './pathfinder';

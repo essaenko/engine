@@ -1,5 +1,7 @@
-export class Loop implements ILoop {
-  public eventBus: IEventBus;
+import { EventBus } from 'core/eventbus';
+
+export class Loop {
+  public eventBus: EventBus;
   public pressed: number[] = [];
 
   constructor(eventBus) {

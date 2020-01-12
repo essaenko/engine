@@ -1,7 +1,17 @@
 import { Queue } from 'core/pathfinder/queue';
+import { Graph } from './graph';
 
-export class PathFinder implements IPathFinder {
-  private queue: IQueue;
+export interface IPathNode {
+  x: number;
+  y: number;
+}
+export interface IPath {
+  length: number,
+  [key: number]: IPathNode
+}
+
+export class PathFinder {
+  private queue: Queue;
   private path: Dict<IPathNode> = {};
   private start: IPathNode = void 0;
   private end: IPathNode = void 0;
@@ -12,7 +22,7 @@ export class PathFinder implements IPathFinder {
     this.queue = new Queue()
   }
   
-  public find = (start: number[], end: number[], graph: IGraph) => {
+  public find = (start: number[], end: number[], graph: Graph): string[] => {
     this.reset();
     this.start = graph.getNode(start);
     this.end = graph.getNode(end);
@@ -54,7 +64,7 @@ export class PathFinder implements IPathFinder {
   
   private heuristic = (node: IPathNode): number => Math.abs(this.end.x - node.x) + Math.abs(this.end.y - node.y);
   
-  private findPath = (graph: IGraph): string[] => {
+  private findPath = (graph: Graph): string[] => {
     while (!this.queue.isEmpty) {
       this.current = this.queue.get();
       if (this.current.x === this.end.x && this.current.y === this.end.y) {

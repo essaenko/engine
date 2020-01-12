@@ -1,5 +1,12 @@
 export class Animation {
-  public state;
+  public state: {
+    frameTiming: number;
+    currentTiming: number;
+    currentFrameNumber: number;
+    frames: number[];
+    play: boolean;
+    defaultFrame?: number;
+  };
 
   constructor(initState) {
     this.state = {
@@ -16,7 +23,7 @@ export class Animation {
   
   stop = () => this.setState({ play: false });
   
-  getFrameNumber = () => {
+  getFrameNumber = (): number => {
     const { frameTiming, currentTiming, currentFrameNumber, frames, play, defaultFrame } = this.state;
     
     if (play) {

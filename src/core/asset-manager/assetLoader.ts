@@ -1,6 +1,6 @@
 export class AssetLoader {
-  private loadAsset = async (url: string) => {
-    const result = await fetch(`${url}`);
+  private loadAsset = async (url: string): Promise<Response> => {
+    const result: Response = await fetch(`${url}`);
     
     if (result.status === 200) {
      return result;
@@ -10,10 +10,10 @@ export class AssetLoader {
     }
   };
   
-  private blobToImage = async (response: Response) => {
-    const image = new Image();
-    const blob = await response.blob();
-    const imageLoading = new Promise((res, rej) => {
+  private blobToImage = async (response: Response): Promise<HTMLImageElement> => {
+    const image: HTMLImageElement = new Image();
+    const blob: Blob = await response.blob();
+    const imageLoading: Promise<HTMLImageElement> = new Promise((res, rej) => {
       image.onload = () => res(image);
       image.onerror = (e) => rej(e);
     });
@@ -22,7 +22,7 @@ export class AssetLoader {
     return (await imageLoading);
   };
 
-  public sprite = async (url) => (await this.blobToImage(await this.loadAsset(url)));
+  public sprite = async (url: string): Promise<HTMLImageElement> => (await this.blobToImage(await this.loadAsset(url)));
   
-  public tilemap = async (url) => (await (await this.loadAsset(url)).json());
+  public tilemap = async (url: string): Promise<any> => (await (await this.loadAsset(url)).json());
 }

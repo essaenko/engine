@@ -1,6 +1,8 @@
 import { Entity } from 'core/entity';
 
 export class Fps extends Entity {
+  public state: Entity['state'] & { timestamp: number };
+  
   constructor(config) {
     super(config);
     this.setState({ timestamp: Date.now() });

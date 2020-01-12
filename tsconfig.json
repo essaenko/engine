@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "jsx": "react",
+    "declaration": true,
+    "declarationDir": "types",
     "lib": [
       "es2015",
       "es2017",
@@ -11,9 +14,17 @@
     "resolveJsonModule": true,
     "target": "es5",
     "baseUrl": ".",
+    // "outFile": "./dist/index.js",
     "paths": {
-      "core/*": ["src/core/*"],
-      "game/*": ["src/game/*"]
+      "core/*": [
+        "src/core/*"
+      ],
+      "game/*": [
+        "src/game/*"
+      ],
+      "js/*": [
+        "src/js/*"
+      ]
     }
   }
 }

@@ -1,10 +1,18 @@
 import { Entity } from 'core/entity';
 
 export class Player extends Entity {
-  public state;
+  public state: Entity['state'] & {
+    stats: {
+      agile: number;
+      strenght: number;
+      intellegence: number;
+      health: number;
+      mana: number
+    };
+  };
 
   constructor(state) {
-    super(state);
+    super({...state, ...{ stats: { ...state.stats, health: state.stats.strenght * 2, mana: state.stats.intellegence * 2 } }});
   }
   
   public update = (event) => {

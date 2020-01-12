@@ -1,7 +1,20 @@
-import {AnimationGroup} from '../animation';
+import {AnimationGroup, Animation} from '../animation';
 
-export class SpriteSheet implements ISpriteSheet {
-  public state: ISpriteState;
+export interface ISpriteState {
+    xBorder?: number;
+    xOffset?: number;
+    yBorder?: number;
+    yOffset?: number;
+    row: number;
+    col: number;
+    width: number;
+    height: number;
+    image: HTMLImageElement;
+    animation?: Animation | AnimationGroup;
+  }
+
+export class SpriteSheet {
+  public state: ISpriteState; 
 
   constructor(initState: ISpriteState) {
     this.state = initState;

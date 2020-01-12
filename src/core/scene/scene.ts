@@ -2,12 +2,47 @@ import { AssetManager } from 'core/asset-manager';
 import { Core } from 'core/core';
 import {Graph} from 'core/pathfinder/graph';
 import { logger } from 'game/utils/logger';
+import { Game } from 'core/game';
+import { Entity } from 'core/entity';
+import { Camera } from 'core/camera';
 
-export class Scene implements IScene {
-  public state;
-  public assets;
-  public game;
-  public entities;
+import { IPathNode } from 'core/pathfinder';
+
+export interface ISceneInitialState {
+  fill?: string;
+  preload?: (IScene) => void;
+  create?: (IScene) => void;
+  update?: (IScene) => void;
+  map?: {
+    tileset: any;
+    tilemap: any;
+    atlas: string;
+  };
+  name?: string;
+  title?: string;
+}
+
+export class Scene {
+  public state: {
+    fill?: string;
+    preload?: (IScene) => void;
+    create?: (IScene) => void;
+    update?: (IScene) => void;
+    map?: {
+      tileset: any,
+      tilemap: any,
+      atlas: string,
+    };
+    name?: string;
+    mapGraph?: Graph;
+    camera?: Camera;
+    width?: number;
+    height?: number;
+    title?: number;
+  };
+  public assets: AssetManager;
+  public game: Game;
+  public entities: Entity[];
 
   constructor(initialState: ISceneInitialState = {}) {
     this.state = {...initialState};
@@ -28,7 +63,7 @@ export class Scene implements IScene {
     }
   };
   
-  public checkCollisions = (entity: IEntity) => {
+  public checkCollisions = (entity: Entity) => {
     const { tilemap: { width: tmWidth, height: tmHeight, tileheight: tHeight, tilewidth: tWidth, layers }, tileset: { tiles } } = this.state.map;
 
     if (!tiles) return void 0;
@@ -129,7 +164,7 @@ export class Scene implements IScene {
     this.renderEntities(context);
   };
 
-  private drawDebugShape = (context: CanvasRenderingContext2D, { state: { posX, posY, width, height } }: IEntity) => {
+  private drawDebugShape = (context: CanvasRenderingContext2D, { state: { posX, posY, width, height } }: Entity) => {
     const { camera: { state: { x: xOffset, y: yOffset } } } = this.state;
     context.fillStyle = 'red';
     context.fillRect(posX - xOffset, posY - yOffset, width, height);
@@ -156,6 +191,9 @@ export class Scene implements IScene {
           textContent,
           drawShape,
         } = entity.state;
+        if (typeof entity.render === 'function') {
+          return void entity.render(context);
+        }
   
         if (sprite) {
           sprite.render(
@@ -205,16 +243,16 @@ export class Scene implements IScene {
     }
   };
 
-  public near = (sercher: IPathNode, distance: number, exclude?: IEntity[]): IEntity => {
+  public near = (sercher: IPathNode, distance: number, exclude?: Entity[]): Entity => {
     return this.entities.filter((entity) => {
         if (exclude.includes(entity)) return false;
 
         return Math.abs(sercher.x - entity.state.posX) <= distance && Math.abs(sercher.y - entity.state.posY) <= distance
       }
-    ).sort((a,b) => a - b || 0)[0];
+    ).sort((a: Entity, b: Entity) => a.state.posX + a.state.posY - b.state.posX + b.state.posY)[0];
   };
   
-  public useEntities = (entities: IEntity[]) => {
+  public useEntities = (entities: Entity[]) => {
     this.entities = entities;
     this.entities.forEach(({ state: { textContent }, init }) => {
       if (textContent) {
@@ -235,7 +273,7 @@ export class Scene implements IScene {
     });
   };
   
-  public useCamera = (camera: ICamera) => {
+  public useCamera = (camera: Camera) => {
     const { height, tileheight, width, tilewidth } = this.state.map.tilemap;
     this.setState({ camera });
     if (camera.state.scale) {
@@ -250,6 +288,8 @@ export class Scene implements IScene {
     this.game.state.layer.height = camera.state.height;
     this.game.state.layer.width = camera.state.width;
   };
+
+  public getEntityByProperty = (key: string, value: any): Entity => this.entities.filter((entity) => entity.state[key] === value)[0]
   
   public destroy = () => {
     this.entities.forEach((entity) => {

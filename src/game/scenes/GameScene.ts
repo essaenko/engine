@@ -1,27 +1,30 @@
 import { Scene } from 'core/scene';
-import { AnimationGroup, Animation } from 'core/assets/animation';
 import { Camera } from 'core/camera';
+import { store } from 'js/store/store';
 
 import * as tilemap from 'game/levels/defaultScene.json';
 import { createAnimation } from 'game/animations/animations.factory';
 
-import {Enimy, Player, Fps} from 'game/entities';
+import { Enimy, Player, Fps, StatusBar } from 'game/entities';
 // @ts-ignore
 import playerSprite from 'game/assets/player.png';
 // @ts-ignore
 import rogueSprite from 'game/assets/rogue.png';
 // @ts-ignore
 import atlas from 'game/assets/summer_atlas.png';
+// @ts-ignore
+import hood from 'game/assets/hood.png';
 
 export const GameScene = new Scene({
   fill: '#000',
   name: 'GameScene',
+  title: 'gamescene',
   map: {
     tileset: tilemap.tilesets[0],
     tilemap,
     atlas: 'atlas',
   },
-  preload: (scene: IScene) => {
+  preload: (scene: Scene) => {
     scene.assets.addSprite('player', {
       width: 64,
       height: 64,
@@ -38,6 +41,9 @@ export const GameScene = new Scene({
     });
     scene.assets.addTileset('atlas', {
       url: atlas,
+    });
+    scene.assets.addImage('hood', {
+      url: hood,
     });
   },
   create: (scene) => {
@@ -58,6 +64,8 @@ export const GameScene = new Scene({
       }]
     });
     const player = new Player({
+      stats: { ...store.player.stats },
+      title: "player",
       width: 15,
       height: 10,
       posX: 230,
@@ -97,6 +105,13 @@ export const GameScene = new Scene({
         }, 
       },
     });
+    const statusBar = new StatusBar({
+      posX: 10,
+      posY: 10,
+      width: 120,
+      height: 15,
+      fill: 'rgb(255,255,255)',
+    })
     player.setCollision(rogue);
     rogue.setCollision(player);
     
@@ -104,6 +119,7 @@ export const GameScene = new Scene({
       player,
       rogue,
       fpsMeter,
+      statusBar,
     ]);
     scene.useCamera(new Camera({
       follow: player,
