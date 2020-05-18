@@ -19,7 +19,7 @@ interface ISpriteAssetConfig extends ITilesetAssetConfig {
   yOffset?: number;
 }
 
-type AssetsTypes = 'sprites' | 'tilesets' | 'images';
+type AssetsTypes = 'sprites' | 'tilesets' | 'images' | 'sounds';
 
 interface IAssetStore<AssetType, AssetConfigType>  {
   loaded: { [key: string]: AssetType },
@@ -31,6 +31,7 @@ export class AssetManager {
     sprites: IAssetStore<HTMLImageElement, ISpriteAssetConfig>,
     tilesets: IAssetStore<any, ITilesetAssetConfig>,
     images: IAssetStore<HTMLImageElement, ITilesetAssetConfig>
+    sounds: IAssetStore<string, string>,
   };
 
   constructor() {
@@ -47,6 +48,10 @@ export class AssetManager {
       images: {
         loaded: {},
         queue: {}
+      },
+      sounds: {
+        loaded: {},
+        queue: {},
       }
     };
   }
@@ -62,9 +67,13 @@ export class AssetManager {
   public setTileset = (key: string, map: any): void => this.setAsset('tilesets', key, map);
   public addTileset = (key: string, config: ITilesetAssetConfig): void => void (this.assets.tilesets.queue[key] = config);
 
-  public getImage = (key: string): any => this.getAsset<any>('images', key);
+  public getImage = (key: string): HTMLImageElement => this.getAsset<HTMLImageElement>('images', key);
   public setImage = (key: string, image: HTMLImageElement): void => this.setAsset('images', key, image);
   public addImage = (key: string, config: IDefaultAssetConfig): void => void (this.assets.images.queue[key] = config);
+  
+  public getSound = (key: string): string => this.getAsset<string>('sounds', key);
+  public setSound = (key: string, url: string): void => this.setAsset('sounds', key, url);
+  public addSound = (key: string, { url }: IDefaultAssetConfig): void => void (this.assets.sounds.loaded[key] = url);
   
   public load = async (): Promise<void> => {
     try {
@@ -93,8 +102,9 @@ export class AssetManager {
           }
         }
       }
-    } catch (e) {
-      console.warn('Failed to load assets with error: ', e);
+    } catch (error) {
+      console.warn(error);
+      throw new Error(`Failed to load resources: Error: ${error.message}`);
     }
   }
 }

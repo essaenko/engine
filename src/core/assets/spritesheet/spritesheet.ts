@@ -14,52 +14,46 @@ export interface ISpriteState {
   }
 
 export class SpriteSheet {
-  public state: ISpriteState; 
+  public state: ISpriteState;
 
   constructor(initState: ISpriteState) {
     this.state = initState;
   }
   
-  private xCoord = (frameNumber: number | number[]) => {
-    if (Array.isArray(frameNumber)) {
-      const isFrameWithBorder = frameNumber[0] === 0;
+  private xCoord = (framePosition: [number, number]): number => {
+    const isFirstColumn = framePosition[0] === 0;
 
-      return (isFrameWithBorder && (this.state.xBorder || 0)) +
-        (!isFrameWithBorder && (this.state.xOffset || 0)) +
-        this.state.width * frameNumber[0];
-    }
-
-    const frameColumn = frameNumber % this.state.row;
-    const isFrameWithBorder = frameColumn === 0;
-    
-    return (isFrameWithBorder && (this.state.xBorder || 0)) +
-    (!isFrameWithBorder && (this.state.xOffset || 0)) +
-    this.state.width * frameColumn;
+    return (isFirstColumn && (this.state.xBorder || 0)) +
+           (!isFirstColumn && (this.state.xOffset || 0)) + 
+           this.state.width * framePosition[0];
   };
   
-  private yCoord = (frameNumber: number | number[]) => {
-    if (Array.isArray(frameNumber)) {
-      const isFrameWithBorder = frameNumber[1] === 0;
-  
-      return (isFrameWithBorder && (this.state.yBorder || 0)) +
-        (!isFrameWithBorder && (this.state.yOffset || 0)) + this.state.height * frameNumber[1];
-    }
-    const frameRow = Math.floor(frameNumber/this.state.col);
-    const isFrameWithBorder = frameRow === 0;
-    
-    return (isFrameWithBorder && (this.state.yBorder || 0)) +
-    (!isFrameWithBorder && (this.state.yOffset || 0)) + this.state.height * frameRow;
+  private yCoord = (framePosition: [number, number]): number => {
+    const isFirstRow = framePosition[1] === 0;
+
+    return (isFirstRow && (this.state.yBorder || 0)) +
+           (!isFirstRow && (this.state.yOffset || 0)) +
+           this.state.height * framePosition[1];
   };
   
-  private getPosition = (props) => {
+  private getPosition = (props: {
+    collisionShape?: 'center' | 'bottom';
+    posX: number;
+    posY: number;
+    width: number;
+    height: number;
+    scale?: {
+      x: number;
+      y: number;
+    }
+  }): [number, number] => {
     const {
       collisionShape,
       posX,
       posY,
       width,
       height,
-      scaleHeight,
-      scaleWidth
+      scale,
     } = props;
     const {
       width: spriteWidth,
@@ -97,17 +91,17 @@ export class SpriteSheet {
         y = posY;
         break;
     }
-    x -= scaleWidth/2;
-    y -= scaleHeight;
+    x -= scale.x/2;
+    y -= scale.y;
     
     return [x, y];
   };
   
-  public getFrame = (frameNumber) => {
+  public getFrame = (framePosition: [number, number]): [HTMLImageElement, number, number, number, number] => {
     return [
       this.state.image,
-      this.xCoord(frameNumber),
-      this.yCoord(frameNumber),
+      this.xCoord(framePosition),
+      this.yCoord(framePosition),
       this.state.width,
       this.state.height,
     ]
@@ -117,41 +111,48 @@ export class SpriteSheet {
     this.state.animation = animation;
   };
   
-  public get animation() {
+  public get animation(): Animation | AnimationGroup {
     return this.state.animation;
   }
   
-  public render = (context, props) => {
-    const { getPosition, getFrame, state: { animation } } = this;
-    const { animation: animationType, width, height, scaleHeight, scaleWidth } = props;
-    let params = [];
+  public render = (context: CanvasRenderingContext2D, props: {
+    animation?: string;
+    width: number;
+    height: number;
+    scale?: {
+      x: number;
+      y: number;
+    };
+    posX: number;
+    posY: number;
+  }) => {
+    const { animation } = this.state;
+    const { animation: animationType, width, height, scale } = props;
+    let params: (HTMLImageElement | number)[] = [
+      ...this.getFrame([0, 0]),
+      ...this.getPosition(props),
+      width,
+      height,
+    ];
 
     if (animation) {
       if (animation instanceof AnimationGroup) {
         params = [
-          ...getFrame(animation.state[animationType].getFrameNumber()),
-          ...getPosition(props),
-          width + scaleWidth,
-          height + scaleHeight,
+          ...this.getFrame(animation.state[animationType].getFramePosition()),
+          ...this.getPosition(props),
+          width + scale.x,
+          height + scale.y,
         ];
-      } else {
-        if ('getFrameNumber' in animation) {
-          params = [
-            ...getFrame(animation.getFrameNumber()),
-            ...getPosition(props),
-            width + scaleWidth,
-            height + scaleHeight,
-          ];
-        }
+      } else if (animation instanceof Animation) {
+        params = [
+          ...this.getFrame(animation.getFramePosition()),
+          ...this.getPosition(props),
+          width + scale.x,
+          height + scale.y,
+        ];
       }
-    } else {
-      params = [
-        ...getFrame(0),
-        ...getPosition(props),
-        width,
-        height,
-      ];
     }
+    //@ts-ignore
     context.drawImage(...params);
   };
 }

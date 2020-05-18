@@ -4,16 +4,21 @@ export class Graph {
   private width: number = 0;
   private height: number = 0;
   private map: IPathNode[][] = [];
+  private allowDiagonals: boolean = true;
   
   constructor(props: {
     width: number;
     height: number;
     map: number[];
+    allowDiagonals?: boolean;
   }
   ) {
     this.width = props.width;
     this.height = props.height;
     this.denormalizeMap(props.map);
+    if (props.allowDiagonals !== void 0) {
+      this.allowDiagonals = props.allowDiagonals
+    }
   }
   
   private denormalizeMap = (map: number[]) => {
@@ -46,27 +51,28 @@ export class Graph {
     if (this.map[item[1]][item[0] - 1]) neighbors.push(this.map[item[1]][item[0] - 1]);
     if (this.map[item[1] + 1][item[0]]) neighbors.push(this.map[item[1] + 1][item[0]]);
 
-    if (
-      this.map[item[1] + 1][item[0] + 1] &&
-      this.map[item[1]][item[0] + 1] &&
-      this.map[item[1] + 1][item[0]]
-      ) neighbors.push(this.map[item[1] + 1][item[0] + 1]);
-    if (
-      this.map[item[1] - 1][item[0] + 1] &&
-      this.map[item[1]][item[0] + 1] &&
-      this.map[item[1] - 1][item[0]]
-      ) neighbors.push(this.map[item[1] - 1][item[0] + 1]);
-    if (
-      this.map[item[1] - 1][item[0] - 1] &&
-      this.map[item[1] - 1][item[0]] &&
-      this.map[item[1]][item[0] - 1]
-      ) neighbors.push(this.map[item[1] - 1][item[0] - 1]);
-    if (
-      this.map[item[1] + 1][item[0] - 1] &&
-      this.map[item[1] - 1][item[0]] &&
-      this.map[item[1] + 1][item[0]]
-      ) neighbors.push(this.map[item[1] + 1][item[0] - 1]);
-
+    if (this.allowDiagonals) {
+      if (
+        this.map[item[1] + 1][item[0] + 1] &&
+        this.map[item[1]][item[0] + 1] &&
+        this.map[item[1] + 1][item[0]]
+        ) neighbors.push(this.map[item[1] + 1][item[0] + 1]);
+      if (
+        this.map[item[1] - 1][item[0] + 1] &&
+        this.map[item[1]][item[0] + 1] &&
+        this.map[item[1] - 1][item[0]]
+        ) neighbors.push(this.map[item[1] - 1][item[0] + 1]);
+      if (
+        this.map[item[1] - 1][item[0] - 1] &&
+        this.map[item[1] - 1][item[0]] &&
+        this.map[item[1]][item[0] - 1]
+        ) neighbors.push(this.map[item[1] - 1][item[0] - 1]);
+      if (
+        this.map[item[1] + 1][item[0] - 1] &&
+        this.map[item[1] - 1][item[0]] &&
+        this.map[item[1] + 1][item[0]]
+        ) neighbors.push(this.map[item[1] + 1][item[0] - 1]);
+    }
     
     return neighbors;
   }

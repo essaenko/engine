@@ -2,11 +2,12 @@
     padding: 0;
     margin: 0;
     border: 0;
+    cursor: url('../game/assets/images/cursor.png'), auto !important;
 }
-body {
+body, html {
     overflow: hidden;
     background-color: #000;
-    background-image: url('../game/assets/background.jpg');
+    background-image: url('../game/assets/images/background.jpg');
     background-size: cover;
 }
 
@@ -15,7 +16,7 @@ div {
 }
 
 .main_menu {
-    background-image: url('../game/assets/menu_top.png'), url('../game/assets/menu_mid.png'), url('../game/assets/menu_bot.png');
+    background-image: url('../game/assets/images/menu_top.png'), url('../game/assets/images/menu_mid.png'), url('../game/assets/images/menu_bot.png');
     background-position: top center, 0 20px, bottom center;
     background-repeat: no-repeat, no-repeat, no-repeat;
     background-size: contain, 100% calc(100% - 50px), contain;
@@ -67,7 +68,7 @@ div {
 }
 
 .menu_item, .character_item, .character_creator__done {
-    background-image: url('../game/assets/button.png');
+    background-image: url('../game/assets/images/button.png');
     background-size: 100%;
     padding: 35px 0 29px 0;
     text-align: center;
@@ -78,7 +79,7 @@ div {
 }
 
 .menu_item:first-child {
-    background-image: url('../game/assets/main_button.png');
+    background-image: url('../game/assets/images/main_button.png');
     margin: 26px auto 0;
     padding: 52px 0 29px 0;
 }

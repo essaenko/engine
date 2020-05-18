@@ -5,7 +5,7 @@ export class EventBus {
     this.subscribers = {}; 
   }
   
-  public dispatch = (event: string, payload?: any): void => {
+  public dispatch = <T>(event: string, payload?: T): void => {
     if (this.subscribers[event]) {
       this.subscribers[event].forEach(subscriber => subscriber(payload));
     }
@@ -13,14 +13,14 @@ export class EventBus {
     return void 0;
   };
   
-  public subscribe = (event: string, handler: (payload: any) => void): void => {
+  public subscribe = <T>(event: string, handler: (payload: T) => void): void => {
     if (!this.subscribers[event]) {
       this.subscribers[event] = [];
     }
     return void this.subscribers[event].push(handler);
   };
   
-  public unsubscribe = (event: string, handler: (payload: any) => void): void => {
+  public unsubscribe = <T>(event: string, handler: (payload: T) => void): void => {
     this.subscribers[event] = this.subscribers[event].filter((subscriber) => subscriber !== handler);
 
     return void 0;

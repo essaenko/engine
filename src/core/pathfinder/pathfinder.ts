@@ -34,20 +34,20 @@ export class PathFinder {
   
   private createPath = (): string[] => {
     let result: string[] = [`${this.end.x}:${this.end.y}`];
-    let current = '';
+    let currentNode = '';
 
     for (let i = 0; i < Object.keys(this.path).length; i++) {
-      if (current === `${this.start.x}:${this.start.y}`) {
+      if (currentNode === `${this.start.x}:${this.start.y}`) {
         break;
       }
-      let node = this.path[current];
-      if (current === '') {
-        node = this.path[`${this.end.x}:${this.end.y}`];
+      let parentNode = this.path[currentNode];
+      if (currentNode === '') {
+        parentNode = this.path[`${this.end.x}:${this.end.y}`];
       }
-      result.push(current);
-      current = `${node.x}:${node.y}`;
+      result.push(currentNode);
+      currentNode = `${parentNode.x}:${parentNode.y}`;
     }
-
+    
     this.reset();
 
     return result.reverse();
@@ -84,6 +84,8 @@ export class PathFinder {
         }
       });
     }
-    throw Error('Not found');
+    console.warn("There is no path to provided entity");
+    
+    return [];
   }
 }

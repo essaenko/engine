@@ -1,6 +1,10 @@
 import { Core } from 'core/core';
 import { Scene } from 'core/scene';
+import { IGameStartEvent, IGameInitedEvent, IGameSceneChangeEvent, ILoopTickEvent } from 'core/eventbus/events';
+import { Sound } from 'core/sound';
+import { AssetManager } from 'core/asset-manager';
 
+window.Math.clamp = (min: number, max: number, value: number) => Math.max(min, Math.min(value, max));
 export interface IGameInitialState {
   width?: number;
   height?: number;
@@ -8,12 +12,14 @@ export interface IGameInitialState {
   scene: Scene;
 }
 export class Game {
+  public assetManager: AssetManager = new AssetManager();
   public state: {
     scene: Scene;
     width?: number;
     height?: number;
     layer: HTMLCanvasElement;
     layerContext: CanvasRenderingContext2D;
+    sound: Sound;
   };
 
   constructor(initialState: IGameInitialState = {
@@ -24,25 +30,33 @@ export class Game {
   }) {
     this.state = { ...initialState, ...{
         layerContext: null,
-        layer: document.getElementById(initialState.layer) as HTMLCanvasElement
+        layer: document.getElementById(initialState.layer) as HTMLCanvasElement,
+        sound: null,
       }
     };
     (window as any).__game_state__ = this.state;
     this.awaitLoading();
-    Core.eventBus.dispatch('game:inited');
+    Core.eventBus.dispatch<IGameInitedEvent>('game:inited');
   }
   
-  private setState = (state): void => {
+  public setState = (state: { [K in keyof Game['state']]?: Game['state'][K] }): void => {
     this.state = {
       ...this.state,
       ...state,
     };
     (window as any).__game_state__ = this.state;
   };
+
+  public getAssetManager = (): AssetManager => this.assetManager;
+
+  private createSoundInterface = () => {
+    this.setState({ sound: new Sound() });
+  }
   
   private awaitLoading = (): void => {
     if (['complete', 'interactive'].includes(document.readyState)) {
       this.useLayer();
+      this.createSoundInterface();
       this.applyScene().then(() => {
         this.start();
       });
@@ -57,14 +71,14 @@ export class Game {
   };
   
   public useScene = (scene: Scene): void => {
-    Core.eventBus.unsubscribe('loop:tick', this.render);
+    Core.eventBus.unsubscribe<ILoopTickEvent>('loop:tick', this.render);
     if (this.state.scene) {
       this.state.scene.destroy();
     }
     this.setState({ scene });
     this.applyScene().then(() => {
-      Core.eventBus.subscribe('loop:tick', this.render);
-      Core.eventBus.dispatch('game:scene:change', { scene });
+      Core.eventBus.subscribe<ILoopTickEvent>('loop:tick', this.render);
+      Core.eventBus.dispatch<IGameSceneChangeEvent>('game:scene:change', { scene });
     });
   };
   
@@ -87,13 +101,10 @@ export class Game {
       this.setState({
         layerContext: layer.getContext('2d'),
       });
-      layer.addEventListener('click', (event: MouseUIEvent): void =>  {
-        Core.eventBus.dispatch(`canvasClick`, event);
-      });
     }
   };
   
-  private render = (): void => {
+  private render = (event: ILoopTickEvent): void => {
     const { layerContext, layer: { width, height }, scene: { render } } = this.state;
 
     layerContext.clearRect(0,0, width, height);
@@ -102,8 +113,8 @@ export class Game {
   };
   
   public start = (): void => {
-    Core.eventBus.dispatch('game:start');
-    Core.eventBus.subscribe('loop:tick', this.render);
+    Core.eventBus.dispatch<IGameStartEvent>('game:start', { layer: this.state.layer });
+    Core.eventBus.subscribe<ILoopTickEvent>('loop:tick', this.render);
   }
 
   public subscribe = Core.eventBus.subscribe;

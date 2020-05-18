@@ -19,10 +19,7 @@ const GameLayout = ({ store, setState }) => {
   }, [canvas]);
 
   return (<>
-    <canvas id='layer' ref={canvas}>
-
-    </canvas>
-    <GameHood setState={setState}/>
+    <canvas id='layer' ref={canvas}></canvas>
   </>)
 }
 

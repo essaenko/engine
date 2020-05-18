@@ -3,7 +3,7 @@ canvas:hover{
 }
 
 .game_hood {
-    background-image: url('../game/assets/menu_top.png'), url('../game/assets/menu_mid.png'), url('../game/assets/menu_bot.png');
+    background-image: url('../game/assets/images/menu_top.png'), url('../game/assets/images/menu_mid.png'), url('../game/assets/images/menu_bot.png');
     background-position: top center, 0 20px, bottom center;
     background-repeat: no-repeat, no-repeat, no-repeat;
     background-size: contain, 100% calc(100% - 50px), contain;
@@ -26,7 +26,7 @@ canvas:hover{
 }
 
 .hood__btn {
-    background-image: url('../game/assets/button.png');
+    background-image: url('../game/assets/images/button.png');
     display: inline;
     background-size: 100%;
     padding: 15px 70px;

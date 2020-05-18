@@ -1,51 +1,61 @@
+export interface IAnimationInitialState {
+  frames: [number, number][];
+  defaultFrame?: number;
+  speed: number;
+  name?: string;
+  sound?: string;
+}
+
 export class Animation {
   public state: {
     frameTiming: number;
     currentTiming: number;
-    currentFrameNumber: number;
-    frames: number[];
+    currentFrame: number;
+    frames: [number, number][];
     play: boolean;
     defaultFrame?: number;
+    name?: string;
+    sound?: string;
   };
 
-  constructor(initState) {
+  public onAnimationEnd: () => void;
+
+  constructor(initState: IAnimationInitialState) {
     this.state = {
       ...initState,
-      frameTiming: Math.round(60 / initState.speed /initState.frames.length),
+      play: false,
+      frameTiming: 1000 / initState.speed,
       currentTiming: 0,
-      currentFrameNumber: initState.frames[0],
+      currentFrame: 0,
     };
   }
   
-  setState = (state) => this.state = { ...this.state, ...state };
+  setState = (state: { [K in keyof Animation['state']]?: Animation['state'][K] }) => this.state = { ...this.state, ...state };
   
   play = () => this.setState({ play: true });
   
   stop = () => this.setState({ play: false });
   
-  getFrameNumber = (): number => {
-    const { frameTiming, currentTiming, currentFrameNumber, frames, play, defaultFrame } = this.state;
+  getFramePosition = (): [number, number] => {
+    const { frameTiming, currentTiming, currentFrame, frames, play, defaultFrame } = this.state;
     
     if (play) {
-      if (currentTiming !== frameTiming) {
-        this.setState({ currentTiming: currentTiming + 1 });
-        
-        return currentFrameNumber;
+      if (currentTiming + frameTiming > Date.now()) {
+        return frames[currentFrame];
       } else {
-        const currentFrameNumberIndex = frames.indexOf(currentFrameNumber);
         this.setState({
-          currentTiming: 0,
-          currentFrameNumber: frames[
-            currentFrameNumberIndex === frames.length - 1 ?
-              0 :
-              currentFrameNumberIndex + 1
-            ]
+          currentTiming: Date.now(),
+          currentFrame: currentFrame === frames.length - 1 ? 0 : currentFrame + 1,
         });
+
+        if (currentFrame === frames.length - 1 && this.onAnimationEnd) {
+          this.onAnimationEnd()
+        }
         
-        return frames[0];
+        return frames[currentFrame];
       }
     } else {
-      return defaultFrame === undefined ? currentFrameNumber : defaultFrame;
+      return defaultFrame === undefined ? frames[currentFrame] : frames[defaultFrame];
     }
   }
 }

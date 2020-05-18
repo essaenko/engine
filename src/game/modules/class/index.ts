@@ -1,0 +1,1 @@
+export { ClassModule } from './class';

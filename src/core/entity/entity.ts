@@ -5,60 +5,97 @@ import { Scene } from 'core/scene';
 import { SpriteSheet } from 'core/assets/spritesheet';
 
 import { IPath, IPathNode } from 'core/pathfinder'
+import { ILoopTickEvent, ICollisionEvent, ICanvasClick, ICanvasRegionClick } from 'core/eventbus/events';
+import { AnimationGroup, Animation } from 'core/assets/animation';
 
-export class Entity {
-  public render: any;
-  public state: {
-    posX: number;
-    posY: number;
-    scene: Scene;
+export interface IEntityInitialState {
+  posX: number;
+  id?: number; 
+  posY: number;
+  width: number;
+  height: number;
+  physics?: {
+    gravityX: number;
+    gravityY: number;
+  };
+  speed?: number;
+  fill?: string;
+  sprite?: SpriteSheet;
+  textContent?: {
+    content: string | number;
+    x: number;
+    y: number;
+    font: string;
+    color: string;
+    id: string;
     width: number;
     height: number;
-    physics: {
-      gravityX: number;
-      gravityY: number;
-    };
-    speed?: number;
-    following: {
-      entity: Entity | IPathNode,
-      path: IPath,
-      point: number
-    };
-    target: Entity;
-    fill?: string;
-    sprite?: SpriteSheet;
-    textContent?: {
-      content: string;
-      x: number;
-      y: number;
-      font: string;
-      color: string;
-      id: string;
-      width: number;
-      height: number;
-    }[];
-    drawShape: boolean;
-    animation: string;
-  };;
-  public input: any;
+  }[];
+  drawShape?: boolean;
+  drawPath?: boolean;
+  animation?: string;
+  title?: string;
+  scale?: {
+    x: number;
+    y: number;
+  },
+};
+
+export interface IEntityState extends IEntityInitialState {
+  id: number
+  scene?: Scene;
+  physics: {
+    gravityX: number;
+    gravityY: number;
+  };
+  lastCastKeyDown: number;
+  lastSystemKeyDown: number;
+  following: {
+    entity: Entity | IPathNode,
+    path: IPath,
+    point: number,
+    canRecreatePath: boolean,
+  };
+  sounds: {
+    step: number;
+    cast: number;
+  };
+};
+
+export class Entity {
+  public state: IEntityState;
+  public input: KeyBoard;
   public collisions: Entity[];
   public posX: number;
   public posY: number;
-  public update: (event: any) => void;
   public pathFinder: PathFinder = new PathFinder();
 
-  constructor(initialState) {
+  public render: (context: CanvasRenderingContext2D) => void;
+  public create: (scene: Scene) => void;
+  public update: (event: any) => void;
+  public onCollision: (event: ICollisionEvent) => void;
+
+  constructor(initialState: IEntityInitialState) {
     this.state = {
       ...{
+        id: Math.random(),
         speed: 1,
         physics: {
           gravityY: 0,
           gravityX: 0,
         },
         animation: 'down',
-        scaleHeight: 0,
-        scaleWidth: 0,
+        scale: {
+          x: 0,
+          y: 0,
+        },
         following: null,
+        lastCastKeyDown: null,
+        lastSystemKeyDown: null,
+        sounds: {
+          step: null,
+          cast: null,
+        }
       }, ...initialState
     };
     
@@ -66,11 +103,11 @@ export class Entity {
     this.collisions = [];
   }
   
-  public setState = (state) => this.state = { ...this.state, ...state };
+  public setState = <T>(state: { [K in keyof T]?: T[K] }) => this.state = { ...this.state, ...state };
   
   private pathToEntity = (target: Entity | IPathNode): IPath => {
     const { posX, posY, scene: { state: { map: { tilemap: map } } } } = this.state;
-    let ePosX, ePosY;
+    let ePosX: number, ePosY: number;
     if ('state' in target) {
       ePosX = target.state.posX;
       ePosY = target.state.posY;
@@ -81,14 +118,18 @@ export class Entity {
 
     const selfPos = [Math.floor(posX/map.tilewidth), Math.floor(posY/map.tileheight)];
     const entityPos = [Math.floor(ePosX/map.tilewidth), Math.floor(ePosY/map.tileheight)];
+    if (selfPos[0] === entityPos[0] && selfPos[1] === entityPos[1]) {
+      return void 0;
+    }
+    
     const rawPath = this.pathFinder.find(selfPos, entityPos, this.state.scene.state.mapGraph);
     
-    return rawPath.reduce((acc: any, point: string, index) => {
+    return rawPath.filter((point: string) => point !== '').reduce((acc: any, point: string, index) => {
       const [x, y] = point.split(':');
       if (x && y) {
         acc[index] = {
-          x: +x * +map.tilewidth + +map.tilewidth/2,
-          y: +y * +map.tileheight + +map.tileheight/2,
+          x: +x * +map.tilewidth + +map.tilewidth / 2,
+          y: +y * +map.tileheight + +map.tileheight / 2,
         };
         acc.length = index + 1;
       }
@@ -103,17 +144,21 @@ export class Entity {
         following: {
           entity: pathNode,
           path: this.pathToEntity(pathNode),
+          point: 0,
+          canRecreatePath: false,
         },
       });
     }
   };
   
   public followEntity = (entity: Entity): void => {
-    if (!this.state.following || this.state.following.entity !== entity) {
+    if (!this.state.following || this.state.following.entity !== entity || this.state.following.canRecreatePath) {
       this.setState({
         following: {
           entity,
           path: this.pathToEntity(entity),
+          point: 0,
+          canRecreatePath: false,
         },
       });
     }
@@ -123,12 +168,17 @@ export class Entity {
     if (this.state.following) {
       const { following: { path, point = 0 }, posX, posY, speed, following } = this.state;
       let animation = '';
-      if (path[point]) {
-        if ((path[point].x - 2 < posX && posX < path[point].x + 2) && (path[point].y - 2 < posY && posY< path[point].y + 2)) {
-          this.setState({ following: { ...following, point: point + 1 } });
+      if (path && path[point]) {
+        if (path[point].x === posX && path[point].y === posY) {
+          if (point !== path.length) {
+            this.setState({ following: { ...following, point: point + 1, canRecreatePath: true } });
+          } else {
+            this.stopFollow();
+          }
       
           return void 0;
         }
+        this.setState({ following: { ...this.state.following, canRecreatePath: false } });
         this.posX = (path[point].x > posX ? 1 : path[point].x < posX ? -1 : 0) * speed;
         this.posY = (path[point].y > posY ? 1 : path[point].y < posY ? -1 : 0) * speed;
         if (this.posX < 0) animation = 'left';
@@ -136,7 +186,10 @@ export class Entity {
         if (this.posY < 0) animation = 'top';
         if (this.posY > 0) animation = 'down';
 
-        if (animation) this.updateAnimation(animation, true);
+        if (animation) {
+          this.updateAnimation(animation, true);
+          this.setState({ lastMove: animation });
+        };
       } else {
         this.stopFollow();
       }
@@ -147,19 +200,32 @@ export class Entity {
     this.setState({
       following: null,
     });
-    this.updateAnimation(false);
+    this.updateAnimation(this.state.animation);
   };
+
+  public inRange = (target: Entity, range: number) => {
+    const { posX, posY, width, height } = this.state;
+    const { posX: ePosX, posY: ePosY, width: eWidth, height: eHeight } = target.state;
+
+    return (posX - range < ePosX + eWidth) &&
+        (posX + width + range > ePosX) &&
+        (posY - range < ePosY + eHeight) &&
+        (posY + height + range > ePosY);
+  }
   
   public init = (scene: Scene) => {
     this.setState({ scene });
-    Core.eventBus.subscribe('loop:tick', this.updateProxy);
+    if (this.create) {
+      this.create(scene);
+    }
+    Core.eventBus.subscribe<ILoopTickEvent>('loop:tick', this.updateProxy);
   };
   
   public destroy = () => {
-    Core.eventBus.unsubscribe('loop:tick', this.updateProxy);
+    Core.eventBus.unsubscribe<ILoopTickEvent>('loop:tick', this.updateProxy);
   };
   
-  public updateProxy = (event) => {
+  private updateProxy = (event: ILoopTickEvent) => {
     const { physics: { gravityY, gravityX }, following } = this.state;
     this.posY = gravityY;
     this.posX = -gravityX;
@@ -176,9 +242,22 @@ export class Entity {
     }
     this.applyChanges();
   };
+
+  public checkClick = ({ nativeEvent: { clientX, clientY } }: ICanvasClick) => {
+    const { posX, posY, width, height, scene: { state: { camera } } } = this.state;
+    
+    if (
+      clientX >= (posX * camera.state.scale) - (camera.state.x * camera.state.scale) &&
+      clientX <= (posX * camera.state.scale) - (camera.state.x * camera.state.scale) + (width * camera.state.scale) &&
+      clientY >= (posY * camera.state.scale) - (camera.state.y * camera.state.scale) &&
+      clientY <= (posY * camera.state.scale) - (camera.state.y * camera.state.scale) + (height * camera.state.scale)
+    ) {
+      Core.eventBus.dispatch<ICanvasRegionClick>(`clickOnEntity`, { target: this });
+    }
+  }
   
-  checkCollisions = () => {
-    const {posX, posY, width, height} = this.state;
+  public checkCollisions = () => {
+    const { posX, posY, width, height, following } = this.state;
     this.collisions.forEach(entity => {
       const {posX: ePosX, posY: ePosY, width: eWidth, height: eHeight} = entity.state;
       const [nextX, nextY] = [(posX + this.posX), (posY + this.posY)];
@@ -189,17 +268,34 @@ export class Entity {
         (nextY < ePosY + eHeight) &&
         (nextY + height > ePosY)
       ) {
+        const payload: ICollisionEvent = {
+          x: false,
+          y: false,
+          target: entity,
+        }
         if (
           (nextX < ePosX + eWidth) &&
           (nextX + width > ePosX)
         ) {
-          this.posX = 0;
+          payload.x = true;
         }
         if (
           (nextY < ePosY + eHeight) &&
           (nextY + height > ePosY)
         ) {
-          this.posY = 0;
+          payload.y = true;
+        }
+        
+        if (following && entity === following.entity) {
+          this.stopFollow();
+        }
+        
+        if (this.onCollision) {
+          this.onCollision(payload);
+        }
+        
+        if (entity.onCollision) {
+          entity.onCollision({ ...payload, target: this });
         }
       }
     });
@@ -207,46 +303,48 @@ export class Entity {
       this.state.scene.checkCollisions(this);
     }
   };
+
+  public onAnimationEnd = (callback: () => void) => {
+    const animation = this.getAnimation()
+    animation.onAnimationEnd = callback;
+  }
+
+  private getAnimation = (): Animation => {
+    if (this.state.sprite.animation instanceof AnimationGroup) {
+      return this.state.sprite.animation.state[this.state.animation];
+    } else if (this.state.sprite.animation instanceof Animation){
+      return this.state.sprite.animation;
+    }
+  } 
   
-  updateAnimation = (animation: string | boolean, play?) => {
-    if (this.state.sprite && this.state.animation) {
-      if (typeof animation === 'string') {
-        this.setState({ animation });
+  public updateAnimation = (anim: string, play: boolean = false) => {
+    const { sprite, animation, scene, sounds } = this.state;
+    if (sprite && animation) {
+      if (typeof anim === 'string') {
+        this.setState({ animation: anim });
         if (play) {
-          this.state.sprite.animation.state[animation].play();
+          sprite.animation.state[anim].play();
+          if (Date.now() > sounds.step) {
+            scene.game.state.sound.play({
+              url: scene.assets.getAsset('sounds', 'step'),
+              speed: 2,
+            }).then((duration: number) => {
+              this.setState({ sounds: { ...sounds, step: Date.now() + duration } });
+            });
+          }
+        } else {
+          sprite.animation.state[anim].stop();
         }
-      } else {
-        this.state.sprite.animation.state[this.state.animation].stop();
       }
     }
   };
   
-  setCollision = (object) => {
+  public setCollision = (object) => {
     this.collisions.push(object);
   };
   
-  applyChanges = () => {
+  private applyChanges = () => {
     this.state.posX += this.posX;
     this.state.posY += this.posY;
-  };
-  
-  setEntityInToLayer = (context) => {
-    const {
-      posY,
-      posX,
-      width,
-      height,
-    } = this.state;
-    if (posY < 0) {
-      this.state.posY = 0;
-    } else if (posY + height > context.canvas.height) {
-      this.state.posY = context.canvas.height - height;
-    }
-    
-    if (posX < 0) {
-      this.state.posX = 0;
-    } else if (posX + width > context.canvas.width) {
-      this.state.posX = context.canvas.width - width;
-    }
   };
 }

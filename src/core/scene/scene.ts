@@ -7,12 +7,14 @@ import { Entity } from 'core/entity';
 import { Camera } from 'core/camera';
 
 import { IPathNode } from 'core/pathfinder';
+import { ICanvasClick, ICanvasRegionClick } from 'core/eventbus/events';
 
 export interface ISceneInitialState {
   fill?: string;
-  preload?: (IScene) => void;
-  create?: (IScene) => void;
-  update?: (IScene) => void;
+  preload?: (scene: Scene) => void;
+  create?: (scene: Scene) => void;
+  update?: (scene: Scene) => void;
+  onCatch?: (error: Error) => void;
   map?: {
     tileset: any;
     tilemap: any;
@@ -20,17 +22,32 @@ export interface ISceneInitialState {
   };
   name?: string;
   title?: string;
+  graph?: {
+    allowDiagonals: boolean;
+  },
 }
 
 export class Scene {
   public state: {
     fill?: string;
-    preload?: (IScene) => void;
-    create?: (IScene) => void;
-    update?: (IScene) => void;
+    preload?: (scene: Scene) => void;
+    create?: (scene: Scene) => void;
+    update?: (scene: Scene) => void;
+    onCatch?: (error: Error) => void;
     map?: {
       tileset: any,
-      tilemap: any,
+      tilemap: {
+        width: number;
+        height: number;
+        tilewidth: number;
+        tileheight: number;
+        layers: {
+          name: string;
+          visible: boolean;
+          data: number[];
+        }[];
+        scale: number;
+      },
       atlas: string,
     };
     name?: string;
@@ -38,7 +55,10 @@ export class Scene {
     camera?: Camera;
     width?: number;
     height?: number;
-    title?: number;
+    title?: string;
+    graph?: {
+      allowDiagonals: boolean;
+    }
   };
   public assets: AssetManager;
   public game: Game;
@@ -51,12 +71,12 @@ export class Scene {
         width: initialState.map.tilemap.width,
         height: initialState.map.tilemap.height,
         map: initialState.map.tilemap.layers.filter(({ name }) => name === 'collision')[0].data,
+        ...initialState.graph
       });
     }
-    this.assets = new AssetManager();
   }
   
-  private setState = (state) => {
+  private setState = (state: { [K in keyof Scene['state']]?: Scene['state'][K] }) => {
     this.state = {
       ...this.state,
       ...state,
@@ -64,7 +84,7 @@ export class Scene {
   };
   
   public checkCollisions = (entity: Entity) => {
-    const { tilemap: { width: tmWidth, height: tmHeight, tileheight: tHeight, tilewidth: tWidth, layers }, tileset: { tiles } } = this.state.map;
+    const { tilemap: { width: tmWidth, height: tmHeight, tileheight: tHeight, tilewidth: tWidth, layers, scale = 1 }, tileset: { tiles } } = this.state.map;
 
     if (!tiles) return void 0;
 
@@ -87,8 +107,8 @@ export class Scene {
       if (tile === null) return void 0;
     
       const [tPosX, tPosY] = [
-        ((index - Math.floor(index/tmHeight) * tmWidth) * tWidth),
-        (Math.floor(index/tmHeight) * tHeight)
+        ((index - Math.floor(index/tmHeight) * tmWidth) * (tWidth * scale)),
+        (Math.floor(index/tmHeight) * (tHeight * scale))
       ];
     
       if (
@@ -112,12 +132,178 @@ export class Scene {
       }
     });
   };
+
+  /**
+   * Debug methods
+   */
+
+  private drawDebugPath = (context: CanvasRenderingContext2D, entity: Entity) => {
+    const { camera: { state: { x: xOffset, y: yOffset, scale } } } = this.state;
+
+    if (entity.state.following && entity.state.following.path) {
+      Object.values(entity.state.following.path).forEach((node: IPathNode) => {
+        context.strokeStyle = 'green';
+        context.strokeRect(node.x * scale - xOffset * scale, node.y * scale - yOffset * scale, 32 * scale, 32 * scale);
+      });
+    }
+  }
+
+  /**
+   * Use methods
+   */
+  public usedByGame = async (game) => {
+    const { state: { width, height } } = game;
+    this.game = game;
+    this.assets = this.game.getAssetManager();
+    this.setState({
+      width,
+      height,
+    });
+    if (this.state.preload) {
+      this.state.preload(this);
+    }
+    try {
+      await this.assets.load();
+    } catch (e) {
+      if (this.state.onCatch) {
+        this.state.onCatch(e);
+      } else {
+        throw e;
+      }
+    }
+    if (this.state.create) {
+      this.state.create(this);
+    }
+  };
   
-  private renderLayer = (context, tilemap, tileset, layer, image) => {
+  public useEntities = (entities: Entity[]) => {
+    this.entities = entities;
+    this.entities.forEach((entity) => {
+      const { camera } = this.state;
+      
+      Core.eventBus.subscribe<ICanvasClick>('canvasClick', entity.checkClick);
+      entity.init(this);
+    });
+  };
+  
+  public useCamera = (camera: Camera) => {
+    const { height, tileheight, width, tilewidth } = this.state.map.tilemap;
+    this.setState({ camera });
+    camera.setState({
+      maxX: (width * tilewidth * camera.state.scale - camera.state.width) / camera.state.scale,
+      maxY: (height * tileheight * camera.state.scale - camera.state.height) / camera.state.scale
+    });
+    //There are canvas element in property layer and we should exactly mutate him to place new properties
+    this.game.state.layer.height = camera.state.height;
+    this.game.state.layer.width = camera.state.width;
+  };
+
+  /**
+   * Utilities methods
+   */
+  private get sortedEntities () {
+    return this.entities.sort(
+      ({ state: { posY: e1PosY, title } }, { state: { posY: e2PosY } }) =>
+        title === 'statusbar'? 1 : e1PosY > e2PosY ? 1 : e1PosY < e2PosY ? -1 : 0
+    )
+  };
+
+  public near = (sercher: IPathNode, distance: number, exclude?: Entity[]): Entity => {
+    return this.entities.filter((entity) => {
+        if (exclude.includes(entity)) return false;
+
+        return Math.abs(sercher.x - entity.state.posX) <= distance && Math.abs(sercher.y - entity.state.posY) <= distance
+      }
+    ).sort((a: Entity, b: Entity) => a.state.posX + a.state.posY - b.state.posX + b.state.posY)[0];
+  };
+
+  public getEntityByProperty = (key: string, value: any): Entity => this.entities.filter((entity) => entity.state[key] === value)[0]
+  
+  public destroy = () => {
+    this.entities.forEach((entity) => {
+      entity.destroy();
+    })
+  };
+
+  /**
+   * Render methods
+   */
+
+  private drawEntityShape = (context: CanvasRenderingContext2D, { state: { posX, posY, width, height } }: Entity) => {
+    const { camera: { state: { x: xOffset, y: yOffset, scale } } } = this.state;
+    context.strokeStyle = '#21de00';
+    context.strokeRect((posX - 2) * scale - xOffset * scale, (posY - 2) * scale - yOffset * scale, (width + 4) * scale, (height + 2) * scale);
+  };
+
+  private renderEntities = (context: CanvasRenderingContext2D) => {
+    const { camera: { state: { scale, x: xOffset, y: yOffset } } } = this.state;
+    if (this.entities) {
+      this.sortedEntities.forEach(entity => {
+        let {
+          posX,
+          posY,
+          width,
+          height,
+          fill,
+          sprite,
+          textContent,
+          drawShape,
+          drawPath,
+        } = entity.state;
+        if (typeof entity.render === 'function') {
+          return void entity.render(context);
+        }
+        if (drawShape) {
+          this.drawEntityShape(context, entity);
+        }
+        if (entity.state.following && !(entity.state.following.entity instanceof Entity)) {
+          const node = entity.state.following.path[entity.state.following.path.length - 1];
+          if (node) {
+            context.strokeStyle = '#21de00';
+            context.strokeRect((node.x - 16) * scale - xOffset * scale, (node.y - 16) * scale - yOffset * scale, 32 * scale, 32 * scale);
+          }
+        }
+  
+        if (sprite) {
+          sprite.render(
+            context,
+            {
+              ...entity.state,
+              width: entity.state.width * scale,
+              height: entity.state.height * scale,
+              scale: {
+                x: entity.state.scale?.x * scale,
+                y: entity.state.scale?.y * scale,
+              },
+              posX: entity.state.posX * scale - xOffset * scale,
+              posY: entity.state.posY * scale -yOffset *scale,
+            }
+          );
+        } else if (textContent) {
+          textContent.forEach((textItem) => {
+            const { content, x, y, font, color, id, width, height } = textItem;
+            context.fillStyle = color;
+            context.font = font;
+            context.beginPath();
+            context.rect(x,y, width, height);
+            context.fillText(<string>content, x, y + height);
+          });
+        } else {
+          context.fillStyle = fill;
+          context.fillRect(posX, posY, width, height);
+        }
+        if (drawPath) {
+          this.drawDebugPath(context, entity);
+        }
+      });
+    }
+  };
+
+  private renderLayer = (context: CanvasRenderingContext2D, tilemap, tileset, layer, image: HTMLImageElement) => {
     const { data: tiles } = layer;
     const { columns, spacing = 0 } = tileset;
     const { tileheight, tilewidth } = tilemap;
-    const { x: xOffset, y: yOffset} = this.state.camera.state;
+    const { x: xOffset, y: yOffset, scale } = this.state.camera.state;
   
     if (!layer.visible) return void 0;
   
@@ -132,10 +318,10 @@ export class Scene {
           tileheight * Math.floor(tile/columns) + spacing * Math.floor(tile/columns),
           tilewidth,
           tileheight,
-          col * tilewidth + Math.floor(-xOffset),
-          row * tileheight + Math.floor(-yOffset),
-          tilewidth,
-          tileheight,
+          col * (tilewidth * scale) + Math.round(-xOffset * scale),
+          row * (tileheight * scale) + Math.round(-yOffset * scale),
+          ((tilewidth + 1) * scale),
+          ((tileheight + 1) * scale),
         );
       }
     }
@@ -163,137 +349,4 @@ export class Scene {
     }
     this.renderEntities(context);
   };
-
-  private drawDebugShape = (context: CanvasRenderingContext2D, { state: { posX, posY, width, height } }: Entity) => {
-    const { camera: { state: { x: xOffset, y: yOffset } } } = this.state;
-    context.fillStyle = 'red';
-    context.fillRect(posX - xOffset, posY - yOffset, width, height);
-  };
-  
-  private get sortedEntities () {
-    return this.entities.sort(
-      ({ state: { posY: e1PosY } }, { state: { posY: e2PosY } }) =>
-        e1PosY > e2PosY ? 1 : e1PosY < e2PosY ? -1 : 0
-    )
-  };
-  
-  private renderEntities = (context) => {
-    const { camera } = this.state;
-    if (this.entities) {
-      this.sortedEntities.forEach(entity => {
-        let {
-          posX,
-          posY,
-          width,
-          height,
-          fill,
-          sprite,
-          textContent,
-          drawShape,
-        } = entity.state;
-        if (typeof entity.render === 'function') {
-          return void entity.render(context);
-        }
-  
-        if (sprite) {
-          sprite.render(
-            context,
-            {
-              ...entity.state,
-              posX: entity.state.posX - camera.state.x,
-              posY: entity.state.posY - camera.state.y,
-            }
-          );
-        } else if (textContent) {
-          textContent.forEach((textItem) => {
-            const { content, x, y, font, color, id, width, height } = textItem;
-            context.fillStyle = color;
-            context.font = font;
-            context.beginPath();
-            context.rect(x,y, width, height);
-            context.fillText(content, x, y + height);
-            if (context.addHitRegion) {
-              context.addHitRegion({id});
-            }
-          });
-        } else {
-          context.fillStyle = fill;
-          context.fillRect(posX, posY, width, height);
-        }
-        if (drawShape) {
-          this.drawDebugShape(context, entity);
-        }
-      });
-    }
-  };
-  
-  public usedByGame = async (game) => {
-    const { state: { width, height } } = game;
-    this.game = game;
-    this.setState({
-      width,
-      height,
-    });
-    if (this.state.preload) {
-      this.state.preload(this);
-    }
-    await this.assets.load();
-    if (this.state.create) {
-      this.state.create(this);
-    }
-  };
-
-  public near = (sercher: IPathNode, distance: number, exclude?: Entity[]): Entity => {
-    return this.entities.filter((entity) => {
-        if (exclude.includes(entity)) return false;
-
-        return Math.abs(sercher.x - entity.state.posX) <= distance && Math.abs(sercher.y - entity.state.posY) <= distance
-      }
-    ).sort((a: Entity, b: Entity) => a.state.posX + a.state.posY - b.state.posX + b.state.posY)[0];
-  };
-  
-  public useEntities = (entities: Entity[]) => {
-    this.entities = entities;
-    this.entities.forEach(({ state: { textContent }, init }) => {
-      if (textContent) {
-        textContent.forEach((textitem) => {
-          Core.eventBus.subscribe('canvasClick', ({ clientX, clientY, region }: MouseUIEvent) => {
-            if (
-              region === `clickRegion${textitem.id}` ||
-              (clientX >= textitem.x &&
-                clientX <= textitem.x + textitem.width &&
-                clientY >= textitem.y && clientY <= textitem.y + textitem.height)
-            ) {
-              Core.eventBus.dispatch(`clickRegion${textitem.id}`);
-            }
-          });
-        })
-      }
-      init(this);
-    });
-  };
-  
-  public useCamera = (camera: Camera) => {
-    const { height, tileheight, width, tilewidth } = this.state.map.tilemap;
-    this.setState({ camera });
-    if (camera.state.scale) {
-      this.game.state.layer.style.transform = `scale(${camera.state.scale})`;
-      this.game.state.layer.style.marginTop = `${camera.state.height * (camera.state.scale - 1)/2}px`;
-      this.game.state.layer.style.marginLeft = `${camera.state.width * (camera.state.scale - 1)/2}px`;
-    }
-    camera.setState({
-      maxX: width * tilewidth - camera.state.width,
-      maxY: height * tileheight - camera.state.height
-    });
-    this.game.state.layer.height = camera.state.height;
-    this.game.state.layer.width = camera.state.width;
-  };
-
-  public getEntityByProperty = (key: string, value: any): Entity => this.entities.filter((entity) => entity.state[key] === value)[0]
-  
-  public destroy = () => {
-    this.entities.forEach((entity) => {
-      entity.destroy();
-    })
-  }
 }
