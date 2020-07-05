@@ -24,18 +24,22 @@ export const animationConfig: Dict<IAnimationInitialState> = {
   attack_top: {
     frames: [[0, 12], [1, 12], [2, 12], [3, 12], [4, 12]],
     speed: 15,
+    execute: true,
   },
   attack_left: {
     frames: [[0, 13], [1, 13], [2, 13], [3, 13], [4, 13]],
     speed: 15,
+    execute: true,
   },
   attack_down: {
     frames: [[0, 14], [1, 14], [2, 14], [3, 14], [4, 14]],
     speed: 15,
+    execute: true,
   },
   attack_right: {
     frames: [[0, 15], [1, 15], [2, 15], [3, 15], [4, 12]],
     speed: 15,
+    execute: true,
   },
   death: {
     frames: [[0, 20], [1, 20], [2, 20], [3, 20], [4, 20], [5, 20]],

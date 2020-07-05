@@ -1,14 +1,10 @@
 import { AssetLoader } from 'core/asset-manager/index';
-import { SpriteSheet } from 'core/assets/spritesheet/spritesheet';
+import { SpriteSheet, ISpriteState } from 'core/assets/spritesheet/spritesheet';
 
-interface IDefaultAssetConfig {
+export interface IDefaultAssetConfig {
   url: string;
 }
-
-interface ITilesetAssetConfig extends IDefaultAssetConfig {
-  
-}
-interface ISpriteAssetConfig extends ITilesetAssetConfig {
+export interface ISpriteAssetConfig extends IDefaultAssetConfig {
   width: number;
   height: number;
   col: number;
@@ -28,9 +24,9 @@ interface IAssetStore<AssetType, AssetConfigType>  {
 export class AssetManager {
   public loader: AssetLoader;
   public assets: {
-    sprites: IAssetStore<HTMLImageElement, ISpriteAssetConfig>,
-    tilesets: IAssetStore<any, ITilesetAssetConfig>,
-    images: IAssetStore<HTMLImageElement, ITilesetAssetConfig>
+    sprites: IAssetStore<ISpriteState, ISpriteAssetConfig>,
+    tilesets: IAssetStore<any, IDefaultAssetConfig>,
+    images: IAssetStore<HTMLImageElement, IDefaultAssetConfig>
     sounds: IAssetStore<string, string>,
   };
 
@@ -59,13 +55,13 @@ export class AssetManager {
   public getAsset = <T>(type: AssetsTypes, key: string): T => (this.assets[type].loaded[key] as T);
   public setAsset = (type: AssetsTypes, key: string, asset: SpriteSheet | {}): void => void (this.assets[type].loaded[key] = asset);
   
-  public getSprite = (key: string): SpriteSheet => this.getAsset<SpriteSheet>('sprites', key);
-  public setSprite = (key: string, sprite: SpriteSheet): void => this.setAsset('sprites', key, sprite);
+  public getSprite = (key: string): SpriteSheet => new SpriteSheet({ ...this.getAsset<ISpriteState>('sprites', key), name: key });
+  public setSprite = (key: string, sprite: ISpriteState): void => this.setAsset('sprites', key, sprite);
   public addSprite = (key: string, config: ISpriteAssetConfig): void => void (this.assets.sprites.queue[key] = config);
   
   public getTileset = (key: string): any => this.getAsset<any>('tilesets', key);
   public setTileset = (key: string, map: any): void => this.setAsset('tilesets', key, map);
-  public addTileset = (key: string, config: ITilesetAssetConfig): void => void (this.assets.tilesets.queue[key] = config);
+  public addTileset = (key: string, config: IDefaultAssetConfig): void => void (this.assets.tilesets.queue[key] = config);
 
   public getImage = (key: string): HTMLImageElement => this.getAsset<HTMLImageElement>('images', key);
   public setImage = (key: string, image: HTMLImageElement): void => this.setAsset('images', key, image);
@@ -83,10 +79,10 @@ export class AssetManager {
             if (this.assets[type].queue.hasOwnProperty(key)) {
               switch(type) {
                 case 'sprites':
-                  this.setSprite(key, new SpriteSheet({
+                  this.setSprite(key, {
                     ...this.assets[type].queue[key],
                     image: (await this.loader.sprite(this.assets[type].queue[key].url)),
-                  }));
+                  });
                   delete this.assets[type].queue[key];
                   break;
                 case 'tilesets':

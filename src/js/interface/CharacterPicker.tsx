@@ -1,28 +1,15 @@
 import * as React from 'react';
-import { inject, observer } from 'mobx-react';
-// import { store } from './store';
-// import { CharacterCreator } from './charactercreator';
-// import { MainMenu } from './interface/App';
-// import { GameInit } from './gameinit';
+import { useContext } from 'react';
 
-interface IProps {
-  setState: (state: any) => void;
-  store: {
-    characters: any[];
-    player: any;
-  };
-}
-
-const CharacterPicker = ({ setState, store }: IProps) => {
-  const { characters } = store;
+export const CharacterPicker = ({ state, setState }) => {
+  const { characters } = state;
   
   return (
     <div className='character_picker'>
-      {characters.reduce((acc, char) => {
+      {characters && characters.reduce((acc, char) => {
         acc.push(
         <div className='character_item' onClick={() => {
-          store.player = char;
-          setState({ menu: 'game' });
+          setState({ ...state, menu: 'game', player: char });
         }} key={char.class+char.name}>
           <span className='character_item__name'>
             {char.name}
@@ -34,13 +21,11 @@ const CharacterPicker = ({ setState, store }: IProps) => {
 
         return acc;
       }, [])}
-      <div className='character_item' onClick={() => setState({ menu: 'character' })}>
+      <div className='character_item' onClick={() => setState({ ...state, menu: 'character' })}>
         Новый персонаж
       </div>
-      <div className='character_item' onClick={() => setState({ menu: 'main' })}>
+      <div className='character_item' onClick={() => setState({ ...state, menu: 'main' })}>
         Назад
       </div>
     </div>);
 };
-
-export default inject('store')(observer(CharacterPicker));

@@ -1,14 +1,38 @@
-import { Entity, IEntityInitialState } from 'core/entity';
 import { SpriteSheet } from 'core/assets/spritesheet';
 import { ICollisionEvent, ICanvasRegionClick, ILoopTickEvent, ICanvasClick } from 'core/eventbus/events';
 import { Scene } from 'core/scene';
 import { Core } from 'core/core';
-import { ICharaterInitialState, Character } from 'game/entities/character';
+
+import { ICharacterInitialState, Character } from 'game/entities/character';
 import { ClassModule } from 'game/modules';
 
+export interface IPlayerInitialState {
+  level: number;
+  class: ClassModule['state']['title'];
+  expirience: number;
+  posX: number;
+  posY: number;
+  sprite: SpriteSheet;
+  name: string;
+}
+
 export class Player extends Character {
-  constructor(state: ICharaterInitialState) {
-    super(state);
+  constructor(state: IPlayerInitialState) {
+    super({
+      ...state, 
+      physics: {
+        gravityY: 0,
+        gravityX: 0,
+      },
+      title: "player",
+      width: 10,
+      height: 16,
+      fill: 'white',
+      scale: {
+        x: 22,
+        y: 16,
+      }
+    });
 
     this.useModule('class', new ClassModule({
       title: state.class,
@@ -17,8 +41,8 @@ export class Player extends Character {
     Core.eventBus.subscribe<ICanvasClick>('canvasClick', this.onCanvasClick);
   }
 
-  public onCanvasClick = ({ nativeEvent: { clientX, clientY } }: ICanvasClick) => {
-    if (!this.state.death) {
+  public onCanvasClick = ({ nativeEvent: { clientX, clientY }, isContextButton }: ICanvasClick) => {
+    if (!this.state.death && isContextButton) {
       const { scene: { state: { camera } } } = this.state;
 
       this.followNode({ x: clientX / camera.state.scale + camera.state.x, y: clientY / camera.state.scale + camera.state.y });
@@ -45,15 +69,26 @@ export class Player extends Character {
   }
 
   private setTarget = ({ target }: ICanvasRegionClick) => {
-    if (target !== this) {
+    if (this.state.target) {
+      this.state.target.setState({ drawShape: false });
+    }
+    if (this.state.following) {
+      this.setState({ following: null });
+    }
+    if (target !== this && target instanceof Character) {
       this.setState({ target });
       target.setState({ drawShape: true });
     } else {
-      if (this.state.target) {
-        this.state.target.setState({ drawShape: false });
-      }
       this.setState({ target: null })
     }
+  }
+
+  public onDeath = () => {
+    const { stats, scene } = this.state;
+    const cladbone = scene.getEntityByProperty('title', 'cladbone');
+    setTimeout(() => {
+      this.setState({ stats: { ...stats, health: stats.maxHealth, mana: stats.maxMana }, posX: cladbone.state.posX, posY: cladbone.state.posY, death: false, animation: 'down' });
+    }, 5000);
   }
 
   private handleActions = (): void => {
@@ -82,15 +117,11 @@ export class Player extends Character {
   }
   
   public update = (event: ILoopTickEvent) => {
-    const { speed, lastMove, animation, following, death } = this.state;
+    const { speed, following, death, animation } = this.state;
     let [ moveX, moveY ] = [0, 0];
     let moveDirection: string;
+    this.updateAnimation(animation);
     
-    if (!death) {
-      this.updateAnimation(lastMove);
-    } else {
-      this.updateAnimation(animation);
-    }
     if (this.input.isKeyPressed('S')) {
       moveY = 1;
       moveDirection = 'down';
@@ -109,14 +140,18 @@ export class Player extends Character {
       moveDirection = 'left';
     }
 
+
     if (moveDirection && !death) {
       this.updateAnimation(moveDirection, true);
       this.setState({ lastMove: moveDirection });
+      
       this.posY += speed * moveY;
       this.posX += speed * moveX;
     }
+    if (!death) {
+      this.handleCasts();
+    }
     this.handleActions();
-    this.handleCasts();
 
     if ((this.posX || this.posY) && following) {
       this.setState({ following: null });

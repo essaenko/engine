@@ -1,1 +1,1 @@
-export { Character, ICharacterState, ICharacterInitialState as ICharaterInitialState } from './character';
+export { Character, ICharacterState, ICharacterInitialState } from './character';

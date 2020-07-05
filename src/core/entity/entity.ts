@@ -34,7 +34,7 @@ export interface IEntityInitialState {
   drawShape?: boolean;
   drawPath?: boolean;
   animation?: string;
-  title?: string;
+  title: string;
   scale?: {
     x: number;
     y: number;
@@ -42,7 +42,7 @@ export interface IEntityInitialState {
 };
 
 export interface IEntityState extends IEntityInitialState {
-  id: number
+  id: number;
   scene?: Scene;
   physics: {
     gravityX: number;
@@ -74,6 +74,7 @@ export class Entity {
   public create: (scene: Scene) => void;
   public update: (event: any) => void;
   public onCollision: (event: ICollisionEvent) => void;
+  public onSetState: <T>(state: T) => void;
 
   constructor(initialState: IEntityInitialState) {
     this.state = {
@@ -103,10 +104,16 @@ export class Entity {
     this.collisions = [];
   }
   
-  public setState = <T>(state: { [K in keyof T]?: T[K] }) => this.state = { ...this.state, ...state };
+  public setState = <T>(state: { [K in keyof T]?: T[K] }) => {
+    this.state = { ...this.state, ...state }
+    
+    if (this.onSetState) {
+      this.onSetState(this.state);
+    }
+  };
   
   private pathToEntity = (target: Entity | IPathNode): IPath => {
-    const { posX, posY, scene: { state: { map: { tilemap: map } } } } = this.state;
+    const { posX, posY, scene: { state: { map } } } = this.state;
     let ePosX: number, ePosY: number;
     if ('state' in target) {
       ePosX = target.state.posX;
@@ -116,20 +123,20 @@ export class Entity {
       ePosY = target.y;
     }
 
-    const selfPos = [Math.floor(posX/map.tilewidth), Math.floor(posY/map.tileheight)];
-    const entityPos = [Math.floor(ePosX/map.tilewidth), Math.floor(ePosY/map.tileheight)];
+    const selfPos = [Math.floor(posX/map.state.tilewidth), Math.floor(posY/map.state.tileheight)];
+    const entityPos = [Math.floor(ePosX/map.state.tilewidth), Math.floor(ePosY/map.state.tileheight)];
     if (selfPos[0] === entityPos[0] && selfPos[1] === entityPos[1]) {
       return void 0;
     }
     
-    const rawPath = this.pathFinder.find(selfPos, entityPos, this.state.scene.state.mapGraph);
+    const rawPath = this.pathFinder.find(selfPos, entityPos, map.graph);
     
     return rawPath.filter((point: string) => point !== '').reduce((acc: any, point: string, index) => {
       const [x, y] = point.split(':');
       if (x && y) {
         acc[index] = {
-          x: +x * +map.tilewidth + +map.tilewidth / 2,
-          y: +y * +map.tileheight + +map.tileheight / 2,
+          x: +x * +map.state.tilewidth + +map.state.tilewidth / 2,
+          y: +y * +map.state.tileheight + +map.state.tileheight / 2,
         };
         acc.length = index + 1;
       }
@@ -200,7 +207,7 @@ export class Entity {
     this.setState({
       following: null,
     });
-    this.updateAnimation(this.state.animation);
+    this.updateAnimation(this.state.animation, false);
   };
 
   public inRange = (target: Entity, range: number) => {
@@ -339,8 +346,12 @@ export class Entity {
     }
   };
   
-  public setCollision = (object) => {
-    this.collisions.push(object);
+  public setCollision = (object: Entity | Entity[]) => {
+    if (Array.isArray(object)) {
+      this.collisions.push(...object);
+    } else {
+      this.collisions.push(object);
+    }
   };
   
   private applyChanges = () => {

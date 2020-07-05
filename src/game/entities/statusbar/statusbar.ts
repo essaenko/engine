@@ -5,8 +5,6 @@ import { Player } from "game/entities/player";
 import { Character } from "game/entities/character";
 import { levels } from 'game/utils/expirienceMap';
 
-import { store } from 'js/store/store';
-
 
 export class StatusBar extends Entity {
   public state: Entity['state'] & {

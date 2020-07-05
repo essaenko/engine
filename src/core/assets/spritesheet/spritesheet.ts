@@ -1,17 +1,18 @@
 import {AnimationGroup, Animation} from '../animation';
 
 export interface ISpriteState {
-    xBorder?: number;
-    xOffset?: number;
-    yBorder?: number;
-    yOffset?: number;
-    row: number;
-    col: number;
-    width: number;
-    height: number;
-    image: HTMLImageElement;
-    animation?: Animation | AnimationGroup;
-  }
+  name: string;
+  xBorder?: number;
+  xOffset?: number;
+  yBorder?: number;
+  yOffset?: number;
+  row: number;
+  col: number;
+  width: number;
+  height: number;
+  image: HTMLImageElement;
+  animation?: Animation | AnimationGroup;
+}
 
 export class SpriteSheet {
   public state: ISpriteState;
@@ -91,8 +92,8 @@ export class SpriteSheet {
         y = posY;
         break;
     }
-    x -= scale.x/2;
-    y -= scale.y;
+    x -= (scale?.x || 0)/2;
+    y -= scale?.y || 0;
     
     return [x, y];
   };
@@ -107,8 +108,8 @@ export class SpriteSheet {
     ]
   };
   
-  public useAnimation = (animation) => {
-    this.state.animation = animation;
+  public useAnimation = (animation: Animation | AnimationGroup) => {
+    this.state = { ...this.state, animation };
   };
   
   public get animation(): Animation | AnimationGroup {
@@ -140,15 +141,15 @@ export class SpriteSheet {
         params = [
           ...this.getFrame(animation.state[animationType].getFramePosition()),
           ...this.getPosition(props),
-          width + scale.x,
-          height + scale.y,
+          width + (scale?.x || 0),
+          height + (scale?.y || 0),
         ];
       } else if (animation instanceof Animation) {
         params = [
           ...this.getFrame(animation.getFramePosition()),
           ...this.getPosition(props),
-          width + scale.x,
-          height + scale.y,
+          width + (scale?.x || 0),
+          height + (scale?.y || 0),
         ];
       }
     }

@@ -35,7 +35,11 @@ export class Loop {
 
     layer.addEventListener('click', (event: MouseUIEvent) => {
       Core.eventBus.dispatch<ICanvasClick>('canvasClick', { nativeEvent: event });
-    })
+    });
+
+    layer.addEventListener('contextmenu', (event: MouseUIEvent) => {
+      Core.eventBus.dispatch<ICanvasClick>('canvasClick', { nativeEvent: event, isContextButton: true });
+    });
 
     this.initLoop();
   };

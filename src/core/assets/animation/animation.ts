@@ -4,6 +4,7 @@ export interface IAnimationInitialState {
   speed: number;
   name?: string;
   sound?: string;
+  execute?: boolean,
 }
 
 export class Animation {
@@ -16,9 +17,10 @@ export class Animation {
     defaultFrame?: number;
     name?: string;
     sound?: string;
+    execute: boolean,
   };
 
-  public onAnimationEnd: () => void;
+  public onAnimationEnd: (animation: Animation) => void;
 
   constructor(initState: IAnimationInitialState) {
     this.state = {
@@ -27,6 +29,7 @@ export class Animation {
       frameTiming: 1000 / initState.speed,
       currentTiming: 0,
       currentFrame: 0,
+      execute: !!initState.execute,
     };
   }
   
@@ -34,7 +37,7 @@ export class Animation {
   
   play = () => this.setState({ play: true });
   
-  stop = () => this.setState({ play: false });
+  stop = () => this.setState({ play: this.state.execute ? true : false });
   
   getFramePosition = (): [number, number] => {
     const { frameTiming, currentTiming, currentFrame, frames, play, defaultFrame } = this.state;
@@ -49,7 +52,7 @@ export class Animation {
         });
 
         if (currentFrame === frames.length - 1 && this.onAnimationEnd) {
-          this.onAnimationEnd()
+          this.onAnimationEnd(this);
         }
         
         return frames[currentFrame];

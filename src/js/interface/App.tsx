@@ -1,25 +1,34 @@
 import * as React from 'react';
-import { Provider } from 'mobx-react';
-
-import { store } from 'js/store/store'; 
+import { useState, useEffect } from 'react';
 
 import { MainMenu } from './MainMenu';
-import CharacterPicker from './CharacterPicker';
-import CharacterCreator from './CharacterCreator';
-import GameLayout from './GameLayout';
-// import { CharacterPicker } from '../characterpicker';
+import { CharacterPicker } from './CharacterPicker';
+import { CharacterCreator } from './CharacterCreator';
+import { GameLayout } from './GameLayout';
+
+const savedData = localStorage.getItem('game_store');
 
 export const App = () => {
-  const [state, setState] = React.useState({ menu: 'main' });
+  const [state, setState] = useState({
+    character: {},
+    characters: [],
+    menu: 'main',
+  });
+
+  useEffect(() => {
+    setState({ ...state, ...JSON.parse(savedData), menu: 'main' });
+  }, []);
   
   return (
-    <Provider store={store}>
-      {state.menu !== 'game' && <div className='main_menu'>
-        {state.menu === 'main' && (<MainMenu setState={setState} />)}
-        {state.menu === 'characters' && (<CharacterPicker  setState={setState} />)}
-        {state.menu === 'character' && (<CharacterCreator  setState={setState} />)}
-      </div>}
-      {state.menu === 'game' && (<GameLayout setState={setState} />)}
-    </Provider> 
-  );
+    <div>
+      {state.menu !== 'game' &&
+        <div className='main_menu'>
+          {state.menu === 'main' && (<MainMenu setState={setState} state={state} />)}
+          {state.menu === 'characters' && (<CharacterPicker setState={setState} state={state} />)}
+          {state.menu === 'character' && (<CharacterCreator setState={setState} state={state} />)}
+        </div>
+      }
+      {state.menu === 'game' && (<GameLayout state={state} />)}
+    </div>
+  )
 }

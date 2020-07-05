@@ -63,5 +63,9 @@ export class Camera {
       ...this.state,
       ...state,
     };
+
+    if (state.maxX || state.maxY) {
+      this.setCoords();
+    }
   }
 }

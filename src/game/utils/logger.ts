@@ -1,6 +1,6 @@
 import { throttle } from "./throttle";
 
-export const logger = throttle(
+export const log = throttle(
     (...message: any) => {
         console.log(...message);
     },

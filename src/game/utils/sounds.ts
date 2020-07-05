@@ -15,13 +15,20 @@ export const playBackgroundMusic = async (game: Game) => {
     mainTheme3
   ];
 
-  setTimeout(() => {
+  const nextTrack = async () => {
     if (currentTrack !== playlist.length - 1) {
       currentTrack += 1;
     } else {
       currentTrack = 0;
     }
-  }, await game.state.sound.play({
+    
+    setTimeout(nextTrack, await game.state.sound.play({
+      url: playlist[currentTrack],
+      volume: 0.1
+    }))
+  }
+
+  setTimeout(nextTrack, await game.state.sound.play({
     url: playlist[currentTrack],
     volume: 0.1
   }))

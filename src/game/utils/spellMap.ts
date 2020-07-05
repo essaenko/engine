@@ -36,7 +36,7 @@ export const spellMap: ISpell[] = [
     animation: 'slash',
     class: 'hunter',
     range: 10,
-    cost: (stats: Character['state']['stats']) => 10 + stats.intellegence * 0.4,
+    cost: (stats: Character['state']['stats']) => 0,
     damage: (stats: Character['state']['stats']) => stats.agile * 1.5 + 10,
   }
 ]

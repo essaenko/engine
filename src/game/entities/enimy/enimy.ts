@@ -2,8 +2,10 @@ import {Entity, IEntityInitialState} from 'core/entity';
 
 import { IPathNode } from 'core/pathfinder';
 import { ICollisionEvent, ILoopTickEvent } from 'core/eventbus/events';
-import { ICharaterInitialState, Character } from '../character';
+import { Character, ICharacterInitialState } from '../character';
 import { ClassModule } from 'game/modules';
+import { SpriteSheet } from 'core/assets/spritesheet';
+import { Player } from '../player';
 
 interface IActions {
   aggro?: {
@@ -12,11 +14,36 @@ interface IActions {
   }
 }
 
+export interface IEnimyInitialState {
+  name: string;
+  posX: number,
+  posY: number,
+  sprite: SpriteSheet,
+  actions?: IActions,
+  class: ClassModule['state']['title'],
+}
+
 export class Enimy extends Character {
-  private actions: IActions = {};
+  public actions: IActions = {};
   
-  constructor(state: ICharaterInitialState & { actions: IActions }) {
-    super(state);
+  constructor(state: IEnimyInitialState) {
+    super({
+      ...state,
+      physics: {
+        gravityY: 0,
+        gravityX: 0,
+      },
+      width: 10,
+      height: 16,
+      fill: 'white',
+      scale: {
+        x: 22,
+        y: 16,
+      },
+      expirience: 0,
+      level: 2,
+      title: 'rogue',
+    });
     this.actions = state.actions;
     this.useModule('class', new ClassModule({
       title: state.class,
@@ -27,11 +54,13 @@ export class Enimy extends Character {
   public onCollision = (collision: ICollisionEvent) => {
     const { x, y, target } = collision;
 
-    if (x) {
-      this.posX = 0;
-    }
-    if (y) {
-      this.posY = 0;
+    if (target instanceof Player) {
+      if (x) {
+        this.posX = 0;
+      }
+      if (y) {
+        this.posY = 0;
+      }
     }
 
     if (this.state.following && this.state.following.entity === target) {
@@ -49,9 +78,9 @@ export class Enimy extends Character {
     const { scene, target, death, posX, posY } = this.state;
     const { aggro } = this.actions;
     if (aggro !== void 0 && !death) {
-      const near = scene.near(aggro.spawn, aggro.distance, [this]);
+      const near: Character = <Character>scene.near(aggro.spawn, aggro.distance, [this]).find((e) => e instanceof Player);
 
-      if (near) {
+      if (near && !near.state.death) {
         if (this.inRange(near, this.modules.class.spellRange('hit'))) {
           this.setState({ target: near });
           this.castSpell('hit');
@@ -61,6 +90,7 @@ export class Enimy extends Character {
         }
       } else if (target) {
         this.setState({ target: null });
+        this.updateAnimation(this.state.animation, false);
         if (posX !== aggro.spawn.x && posY !== aggro.spawn.y) {
           this.followNode(aggro.spawn);
         }

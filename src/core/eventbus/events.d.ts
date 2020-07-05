@@ -5,10 +5,6 @@ declare interface IEvent {
 
 }
 
-declare interface IGameInitedEvent extends IEvent {
-
-}
-
 declare interface IGameStartEvent extends IEvent {
   layer: HTMLCanvasElement
 }
@@ -27,6 +23,7 @@ declare interface IGameSceneChangeEvent extends IEvent {
 
 declare interface ICanvasClick extends IEvent {
   nativeEvent: MouseUIEvent;
+  isContextButton?: boolean;
 }
 
 declare interface ICollisionEvent extends IEvent {

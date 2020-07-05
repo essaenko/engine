@@ -18,24 +18,60 @@ canvas:hover{
     box-sizing: border-box;
     display: flex;
     align-items: flex-start;
-    cursor: initial;
+    flex-direction: column;
 }
 
 .game_hood:hover {
     cursor: default;
 }
 
-.hood__btn {
+.hood__information {
+    padding: 0 10px;
+    margin-top: 10px;
+    font-size: 17px;
+}
+
+.hoor__stats {
+    padding: 10px;
+    font-size: 15px;
+}
+
+.hood__main-stats, .hood__other-stats {
+    color: #39201a !important;
+}
+
+.hood__name {
+    color: #39201a !important;
+}
+
+.hood__tabs {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.hood__btn, .hood__tab {
     background-image: url('../game/assets/images/button.png');
-    display: inline;
     background-size: 100%;
-    padding: 15px 70px;
+    width: 200px;
+    height: 53px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: 20px;
     color: #39201a;
     margin: 0 auto;
 }
 
-.hood__btn_exit {
+.hood__btn:active, .hood__tab:active {
+    width: 198px;
+}
+
+.hood__btns-w {
     margin-top: auto;
+    display: flex; 
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }

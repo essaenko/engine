@@ -1,7 +1,7 @@
 import {Animation, AnimationGroup} from 'core/assets/animation';
-import {animationConfig} from 'game/animations/animations.config';
+import { animationConfig } from 'game/animations/effects.config';
 
-export const createAnimation = () => {
+export const createEffectAnimation = () => {
   return new AnimationGroup(
     Object.keys(animationConfig)
       .reduce((acc, key) => {
