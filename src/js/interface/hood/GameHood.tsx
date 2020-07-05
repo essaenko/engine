@@ -5,9 +5,10 @@ import { GameHoodCharacter } from './GameHoodCharacter';
 export const GameHood = ({ state }) => {
   const [player, setPlayer] = React.useState(null);
   const [menu, setMenu] = React.useState('main');
+  const { game } = state;
   const getPlayerState = () => {
     if (!player) {
-      const player = (window as any).__game_state__?.scene.getEntityByProperty('title', 'player');
+      const player = game?.state.scene.getEntityByProperty('title', 'player');
       if (player) {
         player.onSetState = setPlayer;
       } else {
@@ -24,23 +25,10 @@ export const GameHood = ({ state }) => {
 
   const saveGame = () => {
     const savedData = JSON.parse(localStorage.getItem('game_store'));
-    let savedPlayer = savedData.characters.filter((char) => (char.name === player.name && char.class === player.class))[0]
-    savedPlayer = {
-      ...savedPlayer,
-      posX: 0,
-      posY: 0,
-      expirience: 0,
+    if (!savedData.characters[player.class]) {
+      savedData.characters[player.class] = {};
     }
-    for(const key in savedPlayer) {
-      if (key === 'scene') {
-        savedPlayer.scene = player.scene.state.name;
-      } else {
-        savedPlayer[key] = player[key];
-      }
-    }
-    const newData = savedData.characters.filter((char) => (char.name !== player.name && char.class !== player.class))
-    newData.push(savedPlayer);
-    savedData.characters = newData;
+    savedData.characters[player.class][player.name] = game.store.state;
     localStorage.setItem('game_store', JSON.stringify(savedData));
   }
 

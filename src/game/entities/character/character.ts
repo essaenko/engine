@@ -4,11 +4,17 @@ import { Module, ClassModule } from "game/modules";
 import { ILoopTickEvent } from "core/eventbus/events";
 import { levels } from 'game/utils/expirienceMap';
 import { classes } from 'game/utils/classMap';
+import { SpriteSheet } from "core/assets/spritesheet";
 
 export interface ICharacterInitialState extends IEntityInitialState {
   class: ClassModule['state']['title'];
   expirience: number;
   level: number;
+  stats?: {
+    health: number;
+    mana: number;
+  };
+  effectsSprite?: SpriteSheet;
 }
 
 export interface ICharacterState extends IEntityState {
@@ -30,6 +36,7 @@ export interface ICharacterState extends IEntityState {
   target: Entity | Character;
   lastMove: 'top' | 'down' | 'left' | 'right';
   effects: string[];
+  effectsSprite?: SpriteSheet;
 }
 
 export type ModuleMap = Module | ClassModule;
@@ -53,8 +60,8 @@ export class Character extends Entity {
         agile: classTemplate.stats.agile  + classTemplate.levelIncrease.agile * (state.level - 1),
         strenght: classTemplate.stats.strenght  + classTemplate.levelIncrease.strenght * (state.level - 1),
         armor: classTemplate.stats.armor + ((classTemplate.stats.agile  + classTemplate.levelIncrease.agile * (state.level - 1)) / 5),
-        health: (classTemplate.stats.strenght  + classTemplate.levelIncrease.strenght * (state.level - 1)) * 15,
-        mana: (classTemplate.stats.intellegence + classTemplate.levelIncrease.intellegence * (state.level - 1)) * 15,
+        health: state?.stats?.health !== void 0 ? state?.stats?.health : (classTemplate.stats.strenght  + classTemplate.levelIncrease.strenght * (state.level - 1)) * 15,
+        mana: state?.stats?.mana !== void 0 ? state?.stats?.mana : (classTemplate.stats.intellegence + classTemplate.levelIncrease.intellegence * (state.level - 1)) * 15,
         maxHealth: (classTemplate.stats.strenght  + classTemplate.levelIncrease.strenght * (state.level - 1)) * 15,
         maxMana: (classTemplate.stats.intellegence + classTemplate.levelIncrease.intellegence * (state.level - 1)) * 15,
       },
@@ -65,6 +72,8 @@ export class Character extends Entity {
       effects: [],
       posX: state.posX || 250,
       posY: state.posY || 350,
+      lastMove: 'down',
+      effectsSprite: state.effectsSprite,
     })
   }
 
@@ -203,9 +212,8 @@ export class Character extends Entity {
   }
 
   public renderEffects = (context: CanvasRenderingContext2D) => {
-    const { effects, scene: { state: { camera } }, width, height, scale, posX, posY } = this.state;
+    const { effects, effectsSprite, scene: { state: { camera } }, width, height, scale, posX, posY } = this.state;
     if (effects.includes('levelup')) {
-      const effectsSprite = this.state.scene.assets.getSprite('effects');
       effectsSprite.animation.state['levelUp'].play();
       effectsSprite.animation.state['levelUp'].onAnimationEnd = () => this.setState({ effects: effects.filter((effect) => effect !== 'levelup') });
       effectsSprite.render(context, {

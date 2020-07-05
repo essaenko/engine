@@ -6,6 +6,7 @@ import { AssetManager } from 'core/asset-manager';
 import { IState as IStoreState } from 'core/store/store.types';
 import { Store } from 'core/store';
 import { IDefaultAssetConfig, ISpriteAssetConfig } from 'core/asset-manager/assetManager';
+import { EventBus } from 'core/eventbus';
 
 Math.clamp = (min: number, max: number, value: number) => Math.max(min, Math.min(value, max));
 export interface IGameInitialState {
@@ -148,4 +149,5 @@ export class Game {
 
   public subscribe = Core.eventBus.subscribe;
   public unsubscribe = Core.eventBus.unsubscribe;
+  public __bus: EventBus = Core.eventBus;
 }

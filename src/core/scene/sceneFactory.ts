@@ -23,11 +23,12 @@ export const SceneFactory = (store: Store, assets: AssetManager): Scene => {
     }),
     name: store.scene.name,
     create: (scene: Scene) => {
-      assets.getSprite('effects').useAnimation(createEffectAnimation());
-      console.log(store);
-      store.scene.entities.forEach((entity) => {
+      [...store.scene.entities, store.state.player].forEach((entity) => {
         let sprite: SpriteSheet;
+        let effectsSprite: SpriteSheet;
         if (entity.sprite && entity.class) {
+          effectsSprite = scene.assets.getSprite('effects');
+          effectsSprite.useAnimation(createEffectAnimation());
           sprite = assets.getSprite(entity.sprite);
           sprite.useAnimation(createActionAnimation());
         }
@@ -41,6 +42,7 @@ export const SceneFactory = (store: Store, assets: AssetManager): Scene => {
         const instance = new entities[entity.title]({
           ...entity as any,
           sprite,
+          effectsSprite,
         });
         scene.useEntities([instance]);
         if (instance instanceof Player) {

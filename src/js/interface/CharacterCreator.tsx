@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Store } from 'core/store';
 
 export const CharacterCreator = ({ state, setState }) => {
   let { character, characters } = state;
@@ -8,15 +9,51 @@ export const CharacterCreator = ({ state, setState }) => {
       'game_store',
       JSON.stringify({
         ...state,
-        characters: [...characters, { ...character, level: 1, stats: classes[character.class].stats, scene: 'Game' }],
+        characters: {
+          ...characters,
+          [character.class]: {
+            ...characters[character.class],
+            [character.name]: {
+              ...(new Store({
+                player: {
+                  ...character,
+                  level: 1,
+                  stats: classes[character.class].stats,
+                  title: 'player',
+                  sprite: 'player',
+                },
+                scenes: [],
+                activeScene: 'Game',
+              })).state,
+            }
+          }
+        },
         character: {}
       })
     );
     setState({
       ...state,
-      characters: [...characters, { ...character, level: 1, stats: classes[character.class].stats, scene: 'Game' }],
+      characters: {
+        ...characters,
+        [character.class]: {
+          ...characters[character.class],
+          [character.name]: {
+            ...(new Store({
+              player: {
+                ...character,
+                level: 1,
+                stats: classes[character.class].stats,
+                title: 'player',
+                sprite: 'player',
+              },
+              scenes: [],
+              activeScene: 'Game',
+            })).state,
+          }
+        }
+      },
       character: {},
-      menu: 'characters'
+      menu: 'characters',
     });
   }
 

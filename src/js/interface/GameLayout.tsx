@@ -25,79 +25,65 @@ import effectsSprite from 'game/assets/images/effects.png';
 
 import { GameHood } from 'js/interface/hood';
 
-export const GameLayout = ({ state }) => {
+export const GameLayout = ({ state, setState }) => {
   const canvas = React.useRef(null);
-  const { player } = state;
+  const { player, characters } = state;
 
   React.useEffect(() => {
     if (canvas.current !== null) {
-      new Game({
-        width: window.innerWidth,
-        height: window.innerHeight,
-        assets: {
-          sprites: {
-            player: {
-              width: 64,
-              height: 64,
-              url: playerSprite,
-              col: 12,
-              row: 8
+      setState({
+        ...state,
+        game: new Game({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          assets: {
+            sprites: {
+              player: {
+                width: 64,
+                height: 64,
+                url: playerSprite,
+                col: 12,
+                row: 8
+              },
+              effects: {
+                width: 192,
+                height: 192,
+                url: effectsSprite,
+                col: 5,
+                row: 8
+              },
+              rogue: {
+                width: 64,
+                height: 64,
+                url: rogueSprite,
+                col: 13,
+                row: 21
+              },
+              cladbone: {
+                width: 32,
+                height: 32,
+                url: cladbone,
+                col: 16,
+                row: 16
+              }
             },
-            effects: {
-              width: 192,
-              height: 192,
-              url: effectsSprite,
-              col: 5,
-              row: 8
+            tilesets: {
+              summer_atlas: { url: atlas },
             },
-            rogue: {
-              width: 64,
-              height: 64,
-              url: rogueSprite,
-              col: 13,
-              row: 21
+            images: {
+              hood: { url: hood },
             },
-            cladbone: {
-              width: 32,
-              height: 32,
-              url: cladbone,
-              col: 16,
-              row: 16
+            sounds: {
+              step: { url: stepSound },
+              slash: { url: slashSound },
+              death: { url: deathSound },
+              levelup: { url: levelUpSound },
             }
           },
-          tilesets: {
-            summer_atlas: { url: atlas },
-          },
-          images: {
-            hood: { url: hood },
-          },
-          sounds: {
-            step: { url: stepSound },
-            slash: { url: slashSound },
-            death: { url: deathSound },
-            levelup: { url: levelUpSound },
-          }
-        },
-        store: {
-          scenes: [],
-          activeScene: player.scene,
-          player: {
-            id: 0,
-            title: 'player',
-            posX: player.posX,
-            posY: player.posY,
-            class: player.class,
-            expirience: player.expirience,
-            level: player.level,
-            width: 12, 
-            height: 10,
-            name: player.name,
-            sprite: 'player',
-            speed: 2,
-          }
-        },
-        layer: 'layer',
-      });
+          store: characters[player.class][player.name],
+          layer: 'layer',
+        })
+    });
     }
   }, [canvas]);
 

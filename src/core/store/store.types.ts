@@ -43,6 +43,7 @@ export interface IStoreEntity {
     x: number;
     y: number;
   },
+  stats?: Dict,
 }
 
 export interface IStoreScene {

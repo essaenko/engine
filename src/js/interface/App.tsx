@@ -28,7 +28,7 @@ export const App = () => {
           {state.menu === 'character' && (<CharacterCreator setState={setState} state={state} />)}
         </div>
       }
-      {state.menu === 'game' && (<GameLayout state={state} />)}
+      {state.menu === 'game' && (<GameLayout state={state} setState={setState} />)}
     </div>
   )
 }

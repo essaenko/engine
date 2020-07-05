@@ -17,7 +17,11 @@ export class EventBus {
     if (!this.subscribers[event]) {
       this.subscribers[event] = [];
     }
-    return void this.subscribers[event].push(handler);
+    if (!this.subscribers[event].includes(handler)) {
+      this.subscribers[event].push(handler);
+    }
+    
+    return void 0;
   };
   
   public unsubscribe = <T>(event: string, handler: (payload: T) => void): void => {

@@ -151,7 +151,7 @@ export class Scene {
   
   public useEntities = (entities: Entity[]) => {
     this.entities.push(...entities);
-    this.entities.forEach((entity) => {
+    entities.forEach((entity) => {
       Core.eventBus.subscribe<ICanvasClick>('canvasClick', entity.checkClick);
       entity.init(this);
     });
@@ -198,16 +198,25 @@ export class Scene {
           const { state: { id, title, width, height, posX, posY } } = entity;
           const normalizedEntity: IStoreEntity = { id, title, posX, posY, width, height };
 
+          if (entity instanceof Entity) {
+            const { state: { sprite, speed, textContent, animation }, state } = entity;
+            Object.assign(normalizedEntity, {
+              sprite: sprite?.state.name,
+              speed,
+              textContent,
+              animation,
+            });
+          }
+
           if (entity instanceof Character) {
-            const { state: { expirience, level, name, sprite, speed }, state } = entity;
+            const { state: { expirience, level, name, stats }, state } = entity;
             Object.assign(normalizedEntity, {
               class: state.class,
               expirience,
               level,
               name,
-              sprite: sprite.state.name,
-              speed,
-            });
+              stats
+            })
           }
 
           if (entity instanceof Enimy) {
@@ -215,6 +224,10 @@ export class Scene {
             Object.assign(normalizedEntity, {
               actions
             });
+          }
+
+          if (entity instanceof Player) {
+            this.game.store.setState({ player: normalizedEntity });
           }
 
           acc.push(normalizedEntity);

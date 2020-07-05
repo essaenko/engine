@@ -18,7 +18,7 @@ export class SpriteSheet {
   public state: ISpriteState;
 
   constructor(initState: ISpriteState) {
-    this.state = initState;
+    this.state = { ...initState };
   }
   
   private xCoord = (framePosition: [number, number]): number => {

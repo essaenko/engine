@@ -48,7 +48,7 @@ export class Enimy extends Character {
     this.useModule('class', new ClassModule({
       title: state.class,
       parent: this,
-    }))
+    }));
   }
 
   public onCollision = (collision: ICollisionEvent) => {
@@ -96,7 +96,6 @@ export class Enimy extends Character {
         }
       }
     }
-
     this.checkDisabledState(event);
   }
 }

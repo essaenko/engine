@@ -184,10 +184,10 @@ export class Entity {
           }
       
           return void 0;
-        }
+        } 
         this.setState({ following: { ...this.state.following, canRecreatePath: false } });
-        this.posX = (path[point].x > posX ? 1 : path[point].x < posX ? -1 : 0) * speed;
-        this.posY = (path[point].y > posY ? 1 : path[point].y < posY ? -1 : 0) * speed;
+        this.posX += (path[point].x > posX ? 1 : path[point].x < posX ? -1 : 0) * speed;
+        this.posY += (path[point].y > posY ? 1 : path[point].y < posY ? -1 : 0) * speed;
         if (this.posX < 0) animation = 'left';
         if (this.posX > 0) animation = 'right';
         if (this.posY < 0) animation = 'top';

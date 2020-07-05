@@ -1,5 +1,5 @@
 
-import { IState, IStoreScene } from './store.types';
+import { IState, IStoreScene, IStoreEntity } from './store.types';
 
 export class Store {
   public state: IState = {
@@ -56,6 +56,7 @@ export class Store {
         name: 'Пустынный разбойник',
         sprite: 'rogue',
         speed: 1,
+        stats: {},
         actions: {
           aggro: {
             distance: 100,
@@ -75,18 +76,17 @@ export class Store {
   constructor(state: IState) {
     this.state.activeScene = state.activeScene;
     this.state.player = { ...state.player };
-    state.scenes.forEach((scene) => {
-      const sceneTmpl = this.state.scenes.find((tmpl) => tmpl.name === scene.name);
+    state.scenes.forEach((scene: IStoreScene) => {
+      const sceneTmpl = this.state.scenes.find((sceneTmpl) => sceneTmpl.name === scene.name);
       sceneTmpl.entities.forEach((entityTmpl) => {
-        const entity = scene.entities.find((e) => e.id === entity.id);
-        if (scene.entities.find((e) => e.id === entityTmpl.id)) {
+        const entity: IStoreEntity = scene.entities.find((e: IStoreEntity) => e.id === entityTmpl.id);
+        if (entity) {
           for(const key in entityTmpl) {
             entityTmpl[key] = entity[key];
           }
         }
       });
     });
-    this.state.scenes.find((scene) => scene.name === this.state.activeScene).entities.push(this.state.player);
   }
 
   public setState = (state: { [K in keyof IState]?: IState[K] }): void => {
